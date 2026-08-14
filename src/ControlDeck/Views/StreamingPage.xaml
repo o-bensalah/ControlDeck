@@ -3,16 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf">
     <Grid Background="{StaticResource BackgroundBrush}">
-        <Grid x:Name="PickerGrid" Margin="30">
-            <UniformGrid Rows="2" Columns="3">
-                <Button Content="Cinejoy" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="StreamOne_Click"/>
-                <Button Content="Rive" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="StreamTwo_Click"/>
-                <Button Content="NTV Stream" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="StreamThree_Click"/>
-                <Button Content="StreamSports" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="StreamFour_Click"/>
-                <Button Content="LiveLive24" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="StreamFive_Click"/>
-                <Button Content="Daddy Live" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="StreamSix_Click"/>
-            </UniformGrid>
-        </Grid>
+        <ScrollViewer x:Name="PickerScroll" Margin="30" VerticalScrollBarVisibility="Auto">
+            <UniformGrid x:Name="ServicesGrid" Columns="3"/>
+        </ScrollViewer>
 
         <Grid x:Name="BrowserGrid" Visibility="Collapsed">
             <Grid.RowDefinitions>
