@@ -49,7 +49,12 @@ public partial class StreamingPage : UserControl, IDisposable
         if (!e.IsSuccess)
         {
             CurrentServiceText.Text = "WebView2 Runtime not installed";
+            return;
         }
+
+        // Block popups (ad windows, window.open()) outright — there's no window chrome to put
+        // them in anyway, and streaming sites are notorious for spawning ad popups.
+        Browser.CoreWebView2.NewWindowRequested += (_, args) => args.Handled = true;
     }
 
     public void Dispose() => Browser.Dispose();
