@@ -30,10 +30,30 @@ public partial class MetricsPage : UserControl, IDisposable
         GpuTempText.Text = snapshot.GpuTemp is { } gpuTemp ? $"{gpuTemp:0}°C" : "—";
         GpuLoadBar.Value = snapshot.GpuLoad;
 
-        MemoryText.Text = snapshot.MemoryTotalGb > 0
-            ? $"{snapshot.MemoryUsedGb:0.0} / {snapshot.MemoryTotalGb:0.0} GB"
-            : "—";
-        MemoryBar.Value = snapshot.MemoryTotalGb > 0 ? snapshot.MemoryUsedGb / snapshot.MemoryTotalGb * 100 : 0;
+        bool hasMemory = snapshot.MemoryTotalGb > 0;
+        double memoryPercent = hasMemory ? snapshot.MemoryUsedGb / snapshot.MemoryTotalGb * 100 : 0;
+        MemoryText.Text = hasMemory ? $"{snapshot.MemoryUsedGb:0.0} / {snapshot.MemoryTotalGb:0.0} GB" : "—";
+        MemoryPercentText.Text = hasMemory ? $"{memoryPercent:0}% used" : "—";
+        MemoryBar.Value = memoryPercent;
+
+        DiskText.Text = snapshot.DiskUsedPercent is { } diskPercent ? $"{diskPercent:0}%" : "—";
+        DiskTempText.Text = snapshot.DiskTemp is { } diskTemp ? $"{diskTemp:0}°C" : "—";
+        DiskBar.Value = snapshot.DiskUsedPercent ?? 0;
+
+        NetworkDownText.Text = $"↓ {FormatRate(snapshot.NetworkDownKBs)}";
+        NetworkUpText.Text = $"↑ {FormatRate(snapshot.NetworkUpKBs)}";
+
+        UptimeText.Text = FormatUptime(snapshot.Uptime);
+    }
+
+    private static string FormatRate(float kbPerSecond) =>
+        kbPerSecond >= 1024 ? $"{kbPerSecond / 1024:0.0} MB/s" : $"{kbPerSecond:0} KB/s";
+
+    private static string FormatUptime(TimeSpan uptime)
+    {
+        if (uptime.TotalDays >= 1) return $"{(int)uptime.TotalDays}d {uptime.Hours}h";
+        if (uptime.TotalHours >= 1) return $"{(int)uptime.TotalHours}h {uptime.Minutes}m";
+        return $"{uptime.Minutes}m {uptime.Seconds}s";
     }
 
     public void Dispose()

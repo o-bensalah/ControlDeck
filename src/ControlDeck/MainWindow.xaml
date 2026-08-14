@@ -9,5 +9,16 @@
         ShowInTaskbar="False"
         WindowStartupLocation="Manual"
         Background="White">
-    <controls:SwipeContainer x:Name="Deck"/>
+    <Grid x:Name="RootGrid"
+          MouseMove="OnRootMouseMove"
+          PreviewTouchDown="OnRootPreviewTouchDown"
+          PreviewTouchMove="OnRootPreviewTouchMove"
+          PreviewTouchUp="OnRootPreviewTouchUp">
+        <controls:SwipeContainer x:Name="Deck"/>
+
+        <Button x:Name="CloseButton" Content="&#10005;" Style="{StaticResource NavArrowStyle}"
+                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,10,0,0"
+                Opacity="0" IsHitTestVisible="False"
+                Click="OnCloseButtonClick"/>
+    </Grid>
 </Window>

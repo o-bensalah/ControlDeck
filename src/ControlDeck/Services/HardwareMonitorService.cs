@@ -11,6 +11,11 @@ internal sealed record HardwareSnapshot
     public float? GpuTemp { get; init; }
     public float MemoryUsedGb { get; init; }
     public float MemoryTotalGb { get; init; }
+    public float? DiskUsedPercent { get; init; }
+    public float? DiskTemp { get; init; }
+    public float NetworkDownKBs { get; init; }
+    public float NetworkUpKBs { get; init; }
+    public TimeSpan Uptime { get; init; }
 }
 
 internal sealed class HardwareMonitorService : IDisposable
@@ -20,14 +25,16 @@ internal sealed class HardwareMonitorService : IDisposable
         IsCpuEnabled = true,
         IsGpuEnabled = true,
         IsMemoryEnabled = true,
+        IsStorageEnabled = true,
+        IsNetworkEnabled = true,
     };
 
     public HardwareMonitorService() => _computer.Open();
 
     public HardwareSnapshot Read()
     {
-        float cpuLoad = 0, gpuLoad = 0, memUsed = 0, memAvailable = 0;
-        float? cpuTemp = null, gpuTemp = null;
+        float cpuLoad = 0, gpuLoad = 0, memUsed = 0, memAvailable = 0, networkDown = 0, networkUp = 0;
+        float? cpuTemp = null, gpuTemp = null, diskUsedPercent = null, diskTemp = null;
 
         foreach (var hardware in _computer.Hardware)
         {
@@ -49,6 +56,18 @@ internal sealed class HardwareMonitorService : IDisposable
                     memUsed = ReadNamed(hardware, SensorType.Data, "Memory Used") ?? memUsed;
                     memAvailable = ReadNamed(hardware, SensorType.Data, "Memory Available") ?? memAvailable;
                     break;
+                // First storage device wins — good enough for a single-drive desktop; not worth
+                // aggregating multiple drives into one tile.
+                case HardwareType.Storage when diskUsedPercent is null:
+                    diskUsedPercent = ReadNamed(hardware, SensorType.Load, "Used Space");
+                    diskTemp = ReadAny(hardware, SensorType.Temperature);
+                    break;
+                // Sum across adapters rather than picking "the" active one — idle adapters
+                // just report ~0, so this naturally tracks whichever link is actually busy.
+                case HardwareType.Network:
+                    networkDown += ReadNamed(hardware, SensorType.Throughput, "Download Speed") ?? 0;
+                    networkUp += ReadNamed(hardware, SensorType.Throughput, "Upload Speed") ?? 0;
+                    break;
             }
         }
 
@@ -60,6 +79,11 @@ internal sealed class HardwareMonitorService : IDisposable
             GpuTemp = gpuTemp,
             MemoryUsedGb = memUsed,
             MemoryTotalGb = memUsed + memAvailable,
+            DiskUsedPercent = diskUsedPercent,
+            DiskTemp = diskTemp,
+            NetworkDownKBs = networkDown / 1024f,
+            NetworkUpKBs = networkUp / 1024f,
+            Uptime = TimeSpan.FromMilliseconds(Environment.TickCount64),
         };
     }
 

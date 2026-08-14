@@ -5,7 +5,11 @@
              IsManipulationEnabled="True"
              ManipulationStarting="OnManipulationStarting"
              ManipulationDelta="OnManipulationDelta"
-             ManipulationCompleted="OnManipulationCompleted">
+             ManipulationCompleted="OnManipulationCompleted"
+             PreviewMouseLeftButtonDown="OnPreviewMouseLeftButtonDown"
+             PreviewMouseMove="OnPreviewMouseMove"
+             PreviewMouseLeftButtonUp="OnPreviewMouseLeftButtonUp"
+             LostMouseCapture="OnLostMouseCapture">
     <Grid Background="{StaticResource BackgroundBrush}">
         <Canvas x:Name="PageCanvas">
             <Canvas.RenderTransform>
