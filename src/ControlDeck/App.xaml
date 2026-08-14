@@ -78,7 +78,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="RepeatButton">
                         <Border Background="{TemplateBinding Background}" CornerRadius="4"
-                                Width="8" HorizontalAlignment="Center"/>
+                                Height="8" VerticalAlignment="Center"/>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -99,15 +99,15 @@
         </Style>
 
         <Style x:Key="VolumeSliderStyle" TargetType="Slider">
-            <Setter Property="Orientation" Value="Vertical"/>
+            <Setter Property="Orientation" Value="Horizontal"/>
             <Setter Property="Minimum" Value="0"/>
             <Setter Property="Maximum" Value="100"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Slider">
                         <!-- RepeatButtons are pinned to a thin centered 8px line; the Thumb is
-                             wider and centers independently on top, so it isn't clipped by the
-                             thin track like a shared-width design would. -->
+                             taller and centers independently on top, so it isn't clipped by the
+                             thin track like a shared-height design would. -->
                         <Grid>
                             <Track x:Name="PART_Track">
                                 <Track.DecreaseRepeatButton>
@@ -123,6 +123,85 @@
                                 </Track.Thumb>
                             </Track>
                         </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TransportButtonStyle" TargetType="Button" BasedOn="{StaticResource DeckButtonStyle}">
+            <Setter Property="Width" Value="52"/>
+            <Setter Property="Height" Value="52"/>
+            <Setter Property="FontSize" Value="20"/>
+        </Style>
+
+        <Style x:Key="PlayPauseButtonStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="64"/>
+            <Setter Property="Height" Value="64"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="32">
+                            <Grid RenderTransformOrigin="0.5,0.5">
+                                <Grid.RenderTransform>
+                                    <ScaleTransform x:Name="IconScale"/>
+                                </Grid.RenderTransform>
+                                <Path x:Name="PlayIcon" Data="M 2,0 L 2,20 L 18,10 Z" Stretch="Uniform"
+                                      Fill="{StaticResource TextPrimaryBrush}" Width="18" Height="18"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Grid x:Name="PauseIcon" Opacity="0" Width="18" Height="18"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Rectangle Fill="{StaticResource TextPrimaryBrush}" Width="6"
+                                               HorizontalAlignment="Left"/>
+                                    <Rectangle Fill="{StaticResource TextPrimaryBrush}" Width="6"
+                                               HorizontalAlignment="Right"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="PlayIcon" Storyboard.TargetProperty="Opacity"
+                                                              To="0" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="PauseIcon" Storyboard.TargetProperty="Opacity"
+                                                              To="1" Duration="0:0:0.15"/>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="IconScale" Storyboard.TargetProperty="ScaleX">
+                                                <SplineDoubleKeyFrame KeyTime="0:0:0.08" Value="1.25"/>
+                                                <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="1"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="IconScale" Storyboard.TargetProperty="ScaleY">
+                                                <SplineDoubleKeyFrame KeyTime="0:0:0.08" Value="1.25"/>
+                                                <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="1"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="PlayIcon" Storyboard.TargetProperty="Opacity"
+                                                              To="1" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetName="PauseIcon" Storyboard.TargetProperty="Opacity"
+                                                              To="0" Duration="0:0:0.15"/>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="IconScale" Storyboard.TargetProperty="ScaleX">
+                                                <SplineDoubleKeyFrame KeyTime="0:0:0.08" Value="1.25"/>
+                                                <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="1"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="IconScale" Storyboard.TargetProperty="ScaleY">
+                                                <SplineDoubleKeyFrame KeyTime="0:0:0.08" Value="1.25"/>
+                                                <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="1"/>
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>

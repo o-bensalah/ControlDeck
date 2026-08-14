@@ -5,36 +5,17 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="150"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="150"/>
-            </Grid.ColumnDefinitions>
-
-            <UniformGrid Grid.Column="0" Rows="2" Columns="3" Margin="0,0,30,0">
-                <Button Content="PrtScn" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="PrintScreen_Click"/>
-                <Button Content="Lock" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="Lock_Click"/>
-                <Button Content="Show Desktop" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="ShowDesktop_Click"/>
-                <Button Content="Sleep" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="Sleep_Click"/>
-                <Button Content="Task Manager" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="TaskManager_Click"/>
-                <Button Content="File Explorer" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="FileExplorer_Click"/>
-            </UniformGrid>
-
-            <Grid Grid.Column="1">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Slider x:Name="VolumeSlider" Grid.Row="0" Style="{StaticResource VolumeSliderStyle}"
-                        AutoToolTipPlacement="BottomRight" AutoToolTipPrecision="0"
-                        ValueChanged="VolumeSlider_ValueChanged" Margin="0,10,0,10"
-                        HorizontalAlignment="Center" Width="48"/>
-                <ToggleButton x:Name="MuteButton" Grid.Row="1" Content="Mute" Style="{StaticResource MuteToggleStyle}"
-                              Click="MuteButton_Click"/>
-            </Grid>
-        </Grid>
+        <UniformGrid Grid.Row="0" Rows="2" Columns="3" Margin="0,0,0,16">
+            <Button Content="PrtScn" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="PrintScreen_Click"/>
+            <Button Content="Lock" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="Lock_Click"/>
+            <Button Content="Show Desktop" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="ShowDesktop_Click"/>
+            <Button Content="Sleep" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="Sleep_Click"/>
+            <Button Content="Task Manager" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="TaskManager_Click"/>
+            <Button Content="File Explorer" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="FileExplorer_Click"/>
+        </UniformGrid>
 
         <UniformGrid Grid.Row="1" Rows="1" Columns="6">
             <Border Style="{StaticResource CompactTileStyle}" Margin="6">
@@ -71,7 +52,7 @@
             </Border>
             <Border Style="{StaticResource CompactTileStyle}" Margin="6">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="NET" Style="{StaticResource CompactTileTitleStyle}"/>
+                    <TextBlock Text="NETWORK" Style="{StaticResource CompactTileTitleStyle}"/>
                     <TextBlock x:Name="NetworkDownText" Text="↓ —" Style="{StaticResource CompactTileValueStyle}" FontSize="15"/>
                     <TextBlock x:Name="NetworkUpText" Text="↑ —" Style="{StaticResource CompactTileDetailStyle}"/>
                 </StackPanel>
@@ -83,5 +64,28 @@
                 </StackPanel>
             </Border>
         </UniformGrid>
+
+        <Grid Grid.Row="2" Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Content="&#9198;" Style="{StaticResource TransportButtonStyle}"
+                    Margin="0,0,10,0" Click="PreviousTrack_Click"/>
+            <ToggleButton x:Name="PlayPauseButton" Grid.Column="1" Style="{StaticResource PlayPauseButtonStyle}"
+                          Margin="0,0,10,0" Click="PlayPause_Click"/>
+            <Button Grid.Column="2" Content="&#9197;" Style="{StaticResource TransportButtonStyle}"
+                    Margin="0,0,24,0" Click="NextTrack_Click"/>
+
+            <ToggleButton x:Name="MuteButton" Grid.Column="3" Content="Mute" Style="{StaticResource MuteToggleStyle}"
+                          Width="80" Margin="0,0,16,0" Click="MuteButton_Click"/>
+            <Slider x:Name="VolumeSlider" Grid.Column="4" Style="{StaticResource VolumeSliderStyle}"
+                    AutoToolTipPlacement="BottomRight" AutoToolTipPrecision="0"
+                    ValueChanged="VolumeSlider_ValueChanged" Height="40" VerticalAlignment="Center"/>
+        </Grid>
     </Grid>
 </UserControl>

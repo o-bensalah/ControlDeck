@@ -9,6 +9,7 @@ public partial class DashboardPage : UserControl, IDisposable
 {
     private readonly AudioService _audio = new();
     private readonly HardwareMonitorService _hardware = new();
+    private readonly MediaSessionService _media = new();
     private readonly DispatcherTimer _metricsTimer;
     private bool _suppressSliderEvent;
 
@@ -21,7 +22,11 @@ public partial class DashboardPage : UserControl, IDisposable
         _audio.VolumeChanged += OnSystemVolumeChanged;
 
         _metricsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _metricsTimer.Tick += async (_, _) => await RefreshMetricsAsync();
+        _metricsTimer.Tick += async (_, _) =>
+        {
+            await RefreshMetricsAsync();
+            await RefreshPlaybackStateAsync();
+        };
         Loaded += (_, _) => _metricsTimer.Start();
         Unloaded += (_, _) => _metricsTimer.Stop();
     }
@@ -44,6 +49,19 @@ public partial class DashboardPage : UserControl, IDisposable
     }
 
     private void MuteButton_Click(object sender, RoutedEventArgs e) => _audio.IsMuted = MuteButton.IsChecked == true;
+
+    // The ToggleButton flips its own IsChecked (and plays the crossfade animation) immediately
+    // on click, before this handler runs — the next timer tick self-corrects it if the toggle
+    // didn't actually take (e.g. no active media session).
+    private async void PlayPause_Click(object sender, RoutedEventArgs e) => await _media.TogglePlayPauseAsync();
+    private async void PreviousTrack_Click(object sender, RoutedEventArgs e) => await _media.SkipPreviousAsync();
+    private async void NextTrack_Click(object sender, RoutedEventArgs e) => await _media.SkipNextAsync();
+
+    private async Task RefreshPlaybackStateAsync()
+    {
+        bool isPlaying = await _media.IsPlayingAsync();
+        if (PlayPauseButton.IsChecked != isPlaying) PlayPauseButton.IsChecked = isPlaying;
+    }
 
     private void PrintScreen_Click(object sender, RoutedEventArgs e) => SystemActionsService.PrintScreen();
     private void ShowDesktop_Click(object sender, RoutedEventArgs e) => SystemActionsService.ShowDesktop();
