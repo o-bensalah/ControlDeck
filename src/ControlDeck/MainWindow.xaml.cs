@@ -14,8 +14,7 @@ public partial class MainWindow : Window
     private const double TopEdgeHotZoneHeight = 36;
     private const double TouchRevealDragDistance = 40;
 
-    private readonly ShortcutsPage _shortcutsPage = new();
-    private readonly MetricsPage _metricsPage = new();
+    private readonly DashboardPage _dashboardPage = new();
     private readonly StreamingPage _streamingPage = new();
     private readonly WallpaperPage _wallpaperPage = new();
     private readonly Dictionary<int, Point> _activeTopTouches = new();
@@ -31,16 +30,14 @@ public partial class MainWindow : Window
         SourceInitialized += (_, _) => KioskWindowPlacementService.PlaceOnTargetScreen(this);
         Loaded += (_, _) =>
         {
-            Deck.AddPage(_shortcutsPage);
-            Deck.AddPage(_metricsPage);
+            Deck.AddPage(_dashboardPage);
             Deck.AddPage(_streamingPage);
             Deck.AddPage(_wallpaperPage);
             Deck.GoToPage(0, animate: false);
         };
         Closed += (_, _) =>
         {
-            _shortcutsPage.Dispose();
-            _metricsPage.Dispose();
+            _dashboardPage.Dispose();
             _streamingPage.Dispose();
         };
     }

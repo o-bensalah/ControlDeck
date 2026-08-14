@@ -1,0 +1,87 @@
+<UserControl x:Class="ControlDeck.Views.DashboardPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Background="{StaticResource BackgroundBrush}" Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="150"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="150"/>
+            </Grid.ColumnDefinitions>
+
+            <UniformGrid Grid.Column="0" Rows="2" Columns="3" Margin="0,0,30,0">
+                <Button Content="PrtScn" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="PrintScreen_Click"/>
+                <Button Content="Lock" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="Lock_Click"/>
+                <Button Content="Show Desktop" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="ShowDesktop_Click"/>
+                <Button Content="Sleep" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="Sleep_Click"/>
+                <Button Content="Task Manager" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="TaskManager_Click"/>
+                <Button Content="File Explorer" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="FileExplorer_Click"/>
+            </UniformGrid>
+
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Slider x:Name="VolumeSlider" Grid.Row="0" Style="{StaticResource VolumeSliderStyle}"
+                        AutoToolTipPlacement="BottomRight" AutoToolTipPrecision="0"
+                        ValueChanged="VolumeSlider_ValueChanged" Margin="0,10,0,10"
+                        HorizontalAlignment="Center" Width="48"/>
+                <ToggleButton x:Name="MuteButton" Grid.Row="1" Content="Mute" Style="{StaticResource MuteToggleStyle}"
+                              Click="MuteButton_Click"/>
+            </Grid>
+        </Grid>
+
+        <UniformGrid Grid.Row="1" Rows="1" Columns="6">
+            <Border Style="{StaticResource CompactTileStyle}" Margin="6">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="CPU" Style="{StaticResource CompactTileTitleStyle}"/>
+                    <TextBlock x:Name="CpuLoadText" Text="—" Style="{StaticResource CompactTileValueStyle}"/>
+                    <TextBlock x:Name="CpuTempText" Text="—" Style="{StaticResource CompactTileDetailStyle}"/>
+                    <ProgressBar x:Name="CpuLoadBar" Style="{StaticResource CompactLoadBarStyle}" Minimum="0" Maximum="100"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CompactTileStyle}" Margin="6">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="GPU" Style="{StaticResource CompactTileTitleStyle}"/>
+                    <TextBlock x:Name="GpuLoadText" Text="—" Style="{StaticResource CompactTileValueStyle}"/>
+                    <TextBlock x:Name="GpuTempText" Text="—" Style="{StaticResource CompactTileDetailStyle}"/>
+                    <ProgressBar x:Name="GpuLoadBar" Style="{StaticResource CompactLoadBarStyle}" Minimum="0" Maximum="100"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CompactTileStyle}" Margin="6">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="MEM" Style="{StaticResource CompactTileTitleStyle}"/>
+                    <TextBlock x:Name="MemoryText" Text="—" Style="{StaticResource CompactTileValueStyle}" FontSize="15"/>
+                    <TextBlock x:Name="MemoryPercentText" Text="—" Style="{StaticResource CompactTileDetailStyle}"/>
+                    <ProgressBar x:Name="MemoryBar" Style="{StaticResource CompactLoadBarStyle}" Minimum="0" Maximum="100"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CompactTileStyle}" Margin="6">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="DISK" Style="{StaticResource CompactTileTitleStyle}"/>
+                    <TextBlock x:Name="DiskText" Text="—" Style="{StaticResource CompactTileValueStyle}"/>
+                    <TextBlock x:Name="DiskTempText" Text="—" Style="{StaticResource CompactTileDetailStyle}"/>
+                    <ProgressBar x:Name="DiskBar" Style="{StaticResource CompactLoadBarStyle}" Minimum="0" Maximum="100"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CompactTileStyle}" Margin="6">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="NET" Style="{StaticResource CompactTileTitleStyle}"/>
+                    <TextBlock x:Name="NetworkDownText" Text="↓ —" Style="{StaticResource CompactTileValueStyle}" FontSize="15"/>
+                    <TextBlock x:Name="NetworkUpText" Text="↑ —" Style="{StaticResource CompactTileDetailStyle}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource CompactTileStyle}" Margin="6">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="UPTIME" Style="{StaticResource CompactTileTitleStyle}"/>
+                    <TextBlock x:Name="UptimeText" Text="—" Style="{StaticResource CompactTileValueStyle}" FontSize="16"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+    </Grid>
+</UserControl>
