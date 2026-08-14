@@ -8,6 +8,11 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- WFAC010 wants DPI awareness set via WinForms' ApplicationHighDpiMode instead of the
+         manifest, but we have no WinForms UI (UseWindowsForms is only here for Screen
+         enumeration) — the manifest's Per-Monitor-V2 setting is what KioskWindowPlacementService
+         actually needs and must stay. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

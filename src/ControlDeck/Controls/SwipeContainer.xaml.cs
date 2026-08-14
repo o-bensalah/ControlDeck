@@ -54,7 +54,7 @@ public partial class SwipeContainer : UserControl
         _currentIndex = index;
         double target = -index * ActualWidth;
 
-        PageTransform.BeginAnimation(TranslateTransform.XProperty, null);
+        StopAnimationAndFreeze();
         if (animate)
         {
             var anim = new DoubleAnimation(PageTransform.X, target, TimeSpan.FromMilliseconds(220))
@@ -102,6 +102,18 @@ public partial class SwipeContainer : UserControl
         RightArrow.Visibility = _currentIndex < _pages.Count - 1 ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    // BeginAnimation(dp, null) doesn't freeze the transform at its current animated position —
+    // it reverts to the last *locally set* value, which for an element only ever moved by
+    // animation is stale (stuck wherever it was before the animation started, e.g. 0 from
+    // startup). Read the live animated value first and re-assert it as the local value so
+    // interrupting a transition (a new drag, a click mid-swipe) doesn't snap back to page 0.
+    private void StopAnimationAndFreeze()
+    {
+        double current = PageTransform.X;
+        PageTransform.BeginAnimation(TranslateTransform.XProperty, null);
+        PageTransform.X = current;
+    }
+
     private double ClampDragX(double x)
     {
         double min = -(_pages.Count - 1) * ActualWidth;
@@ -123,7 +135,7 @@ public partial class SwipeContainer : UserControl
     private void OnManipulationStarting(object sender, ManipulationStartingEventArgs e)
     {
         e.ManipulationContainer = this;
-        PageTransform.BeginAnimation(TranslateTransform.XProperty, null);
+        StopAnimationAndFreeze();
         _dragStartOffset = PageTransform.X;
     }
 
@@ -141,10 +153,11 @@ public partial class SwipeContainer : UserControl
     // sliders underneath: dragging only "engages" once the pointer moves past DragThreshold.
     private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        // Don't hijack gestures that start on an interactive control (slider thumb, buttons) —
-        // otherwise dragging the volume slider with any horizontal drift steals mouse capture
-        // away from it mid-drag.
-        if (StartsOnInteractiveControl(e.OriginalSource as DependencyObject))
+        // Sliders own their drag gesture entirely — any horizontal drift while dragging the
+        // thumb would otherwise get mistaken for a page swipe and steal mouse capture mid-drag.
+        // Buttons don't have a competing drag gesture, so they stay swipeable: a tap still
+        // clicks normally (never crosses DragThreshold), a real drag pans pages instead.
+        if (StartsOnSlider(e.OriginalSource as DependencyObject))
         {
             _mouseDown = false;
             return;
@@ -153,15 +166,15 @@ public partial class SwipeContainer : UserControl
         _mouseDown = true;
         _mouseDragging = false;
         _mouseDownPosition = e.GetPosition(this);
-        PageTransform.BeginAnimation(TranslateTransform.XProperty, null);
+        StopAnimationAndFreeze();
         _dragStartOffset = PageTransform.X;
     }
 
-    private static bool StartsOnInteractiveControl(DependencyObject? source)
+    private static bool StartsOnSlider(DependencyObject? source)
     {
         for (var node = source; node is not null; node = VisualTreeHelper.GetParent(node))
         {
-            if (node is Thumb or ButtonBase or Slider) return true;
+            if (node is Thumb or Slider) return true;
         }
         return false;
     }
@@ -197,6 +210,12 @@ public partial class SwipeContainer : UserControl
 
     private void OnLostMouseCapture(object sender, MouseEventArgs e)
     {
+        // LostMouseCapture bubbles up from whichever element actually lost capture — if a child
+        // Button had it (it captures on press to track its own pressed state) and we just took
+        // capture away to start a swipe, that Button's LostMouseCapture bubbles through us too.
+        // Only reset our drag state when we ourselves are the one who lost capture.
+        if (!ReferenceEquals(e.OriginalSource, this)) return;
+
         _mouseDown = false;
         _mouseDragging = false;
     }
