@@ -1,0 +1,26 @@
+<UserControl x:Class="ControlDeck.Controls.SwipeContainer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ClipToBounds="True"
+             IsManipulationEnabled="True"
+             ManipulationStarting="OnManipulationStarting"
+             ManipulationDelta="OnManipulationDelta"
+             ManipulationCompleted="OnManipulationCompleted">
+    <Grid Background="{StaticResource BackgroundBrush}">
+        <Canvas x:Name="PageCanvas">
+            <Canvas.RenderTransform>
+                <TranslateTransform x:Name="PageTransform"/>
+            </Canvas.RenderTransform>
+        </Canvas>
+
+        <Button x:Name="LeftArrow" Content="&#8249;" Style="{StaticResource NavArrowStyle}"
+                HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"
+                Click="OnLeftArrowClick" Visibility="Collapsed"/>
+        <Button x:Name="RightArrow" Content="&#8250;" Style="{StaticResource NavArrowStyle}"
+                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"
+                Click="OnRightArrowClick" Visibility="Collapsed"/>
+
+        <StackPanel x:Name="DotsPanel" Orientation="Horizontal" HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom" Margin="0,0,0,16"/>
+    </Grid>
+</UserControl>

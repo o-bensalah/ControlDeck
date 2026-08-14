@@ -1,0 +1,19 @@
+<UserControl x:Class="ControlDeck.Views.WallpaperPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Border x:Name="GradientBackground">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#0B0F14" Offset="0"/>
+                    <GradientStop Color="#132A2E" Offset="0.55"/>
+                    <GradientStop Color="#1E4A45" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+        <Image x:Name="WallpaperImage" Stretch="UniformToFill" Visibility="Collapsed"/>
+        <TextBlock x:Name="ClockText" Text="--:--:--" FontSize="64" FontWeight="Light"
+                   Foreground="#CCE6EDF3" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                   Margin="0,0,0,60"/>
+    </Grid>
+</UserControl>

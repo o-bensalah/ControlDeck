@@ -1,0 +1,31 @@
+<UserControl x:Class="ControlDeck.Views.MetricsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Background="{StaticResource BackgroundBrush}" Margin="40">
+        <UniformGrid Rows="1" Columns="3">
+            <Border Style="{StaticResource TileStyle}" Margin="12">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="CPU" Foreground="{StaticResource TextSecondaryBrush}" FontSize="18" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="CpuLoadText" Text="—" Foreground="{StaticResource TextPrimaryBrush}" FontSize="44" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                    <TextBlock x:Name="CpuTempText" Text="—" Foreground="{StaticResource AccentBrush}" FontSize="20" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <ProgressBar x:Name="CpuLoadBar" Style="{StaticResource LoadBarStyle}" Minimum="0" Maximum="100" Height="8" Margin="0,16,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource TileStyle}" Margin="12">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="GPU" Foreground="{StaticResource TextSecondaryBrush}" FontSize="18" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="GpuLoadText" Text="—" Foreground="{StaticResource TextPrimaryBrush}" FontSize="44" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                    <TextBlock x:Name="GpuTempText" Text="—" Foreground="{StaticResource AccentBrush}" FontSize="20" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    <ProgressBar x:Name="GpuLoadBar" Style="{StaticResource LoadBarStyle}" Minimum="0" Maximum="100" Height="8" Margin="0,16,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource TileStyle}" Margin="12">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="MEMORY" Foreground="{StaticResource TextSecondaryBrush}" FontSize="18" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="MemoryText" Text="—" Foreground="{StaticResource TextPrimaryBrush}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                    <ProgressBar x:Name="MemoryBar" Style="{StaticResource LoadBarStyle}" Minimum="0" Maximum="100" Height="8" Margin="0,16,0,0"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+    </Grid>
+</UserControl>
