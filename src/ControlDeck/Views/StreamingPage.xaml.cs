@@ -55,6 +55,19 @@ public partial class StreamingPage : UserControl, IDisposable
         // Block popups (ad windows, window.open()) outright — there's no window chrome to put
         // them in anyway, and streaming sites are notorious for spawning ad popups.
         Browser.CoreWebView2.NewWindowRequested += (_, args) => args.Handled = true;
+
+        // Domain-based ad/tracker blocking, done natively via WebView2's request filtering
+        // rather than a browser extension — stays fully embedded, no separate process to fight
+        // with for window focus like the Firefox route did.
+        Browser.CoreWebView2.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
+        Browser.CoreWebView2.WebResourceRequested += OnWebResourceRequested;
+    }
+
+    private void OnWebResourceRequested(object? sender, CoreWebView2WebResourceRequestedEventArgs e)
+    {
+        if (!Uri.TryCreate(e.Request.Uri, UriKind.Absolute, out var uri) || !AdBlockList.IsBlocked(uri.Host)) return;
+
+        e.Response = Browser.CoreWebView2.Environment.CreateWebResourceResponse(null, 403, "Blocked", "");
     }
 
     public void Dispose() => Browser.Dispose();
