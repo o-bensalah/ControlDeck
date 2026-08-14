@@ -7,7 +7,9 @@ internal static class SystemActionsService
 {
     public static void Lock() => LockWorkStation();
 
-    public static void PrintScreen() => SendKeyTap(VkSnapshot);
+    // Plain PrtScn only copies to the clipboard on stock Windows and saves no file — Win+PrtScn
+    // is the combo Windows itself uses to auto-save a PNG to Pictures\Screenshots.
+    public static void PrintScreen() => SendKeyCombo(VkLWin, VkSnapshot);
 
     public static void ShowDesktop() => SendKeyCombo(VkLWin, VkD);
 
@@ -16,12 +18,6 @@ internal static class SystemActionsService
     public static void OpenTaskManager() => Process.Start(new ProcessStartInfo("taskmgr.exe") { UseShellExecute = true });
 
     public static void OpenFileExplorer() => Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
-
-    private static void SendKeyTap(ushort vk)
-    {
-        var inputs = new[] { KeyDown(vk), KeyUp(vk) };
-        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<Input>());
-    }
 
     private static void SendKeyCombo(ushort vk1, ushort vk2)
     {
