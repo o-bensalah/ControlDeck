@@ -8,14 +8,11 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <UniformGrid Grid.Row="0" Rows="2" Columns="3" Margin="0,0,0,16">
-            <Button Content="PrtScn" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="PrintScreen_Click"/>
-            <Button Content="Lock" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="Lock_Click"/>
-            <Button Content="Show Desktop" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="ShowDesktop_Click"/>
-            <Button Content="Sleep" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="Sleep_Click"/>
-            <Button Content="Task Manager" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="TaskManager_Click"/>
-            <Button Content="File Explorer" Style="{StaticResource DeckButtonStyle}" Margin="12" Click="FileExplorer_Click"/>
-        </UniformGrid>
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <UniformGrid x:Name="ShortcutsGrid" Columns="4"/>
+            <TextBlock x:Name="LaunchStatusText" Text="" Foreground="{StaticResource DangerBrush}"
+                       FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,4"/>
+        </Grid>
 
         <UniformGrid Grid.Row="1" Rows="1" Columns="6">
             <Border Style="{StaticResource CompactTileStyle}" Margin="6">

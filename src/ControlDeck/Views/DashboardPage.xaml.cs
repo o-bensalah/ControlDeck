@@ -17,6 +17,18 @@ public partial class DashboardPage : UserControl, IDisposable
     {
         InitializeComponent();
 
+        foreach (var entry in AppLauncherCatalog.Load())
+        {
+            var button = new Button
+            {
+                Content = entry.Name,
+                Style = (Style)FindResource("DeckButtonStyle"),
+                Margin = new Thickness(10),
+            };
+            button.Click += (_, _) => LaunchApp(entry);
+            ShortcutsGrid.Children.Add(button);
+        }
+
         VolumeSlider.Value = _audio.Volume * 100;
         MuteButton.IsChecked = _audio.IsMuted;
         _audio.VolumeChanged += OnSystemVolumeChanged;
@@ -63,12 +75,12 @@ public partial class DashboardPage : UserControl, IDisposable
         if (PlayPauseButton.IsChecked != isPlaying) PlayPauseButton.IsChecked = isPlaying;
     }
 
-    private void PrintScreen_Click(object sender, RoutedEventArgs e) => SystemActionsService.PrintScreen();
-    private void ShowDesktop_Click(object sender, RoutedEventArgs e) => SystemActionsService.ShowDesktop();
-    private void Lock_Click(object sender, RoutedEventArgs e) => SystemActionsService.Lock();
-    private void Sleep_Click(object sender, RoutedEventArgs e) => SystemActionsService.Sleep();
-    private void TaskManager_Click(object sender, RoutedEventArgs e) => SystemActionsService.OpenTaskManager();
-    private void FileExplorer_Click(object sender, RoutedEventArgs e) => SystemActionsService.OpenFileExplorer();
+    private void LaunchApp(AppLauncherEntry entry)
+    {
+        LaunchStatusText.Text = AppLauncherService.TryLaunch(entry, out var error)
+            ? ""
+            : $"Couldn't launch \"{entry.Name}\": {error}";
+    }
 
     private async Task RefreshMetricsAsync()
     {
