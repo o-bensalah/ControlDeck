@@ -39,6 +39,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <Button Grid.Column="0" Content="&#9198;" Style="{StaticResource TransportButtonStyle}"
@@ -53,6 +54,9 @@
             <Slider x:Name="VolumeSlider" Grid.Column="4" Style="{StaticResource VolumeSliderStyle}"
                     AutoToolTipPlacement="BottomRight" AutoToolTipPrecision="0"
                     ValueChanged="VolumeSlider_ValueChanged" Height="40" VerticalAlignment="Center"/>
+
+            <ToggleButton x:Name="MicMuteButton" Grid.Column="5" Style="{StaticResource MicMuteToggleStyle}"
+                          Width="96" Margin="16,0,0,0" Click="MicMuteButton_Click"/>
         </Grid>
     </Grid>
 </UserControl>

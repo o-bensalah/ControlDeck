@@ -127,6 +127,48 @@
             </Setter>
         </Style>
 
+        <Style x:Key="MicMuteToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height" Value="56"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <!-- Mic mute is a plain on/off toggle (no level meter like the speaker's
+                             0-3 waves), so a single IsChecked trigger crossing the glyph out is
+                             enough — no code-behind needed to drive the icon, unlike MuteToggleStyle. -->
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="14">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Grid Width="22" Height="20" Margin="0,0,8,0">
+                                    <Rectangle Width="10" Height="12" RadiusX="5" RadiusY="5"
+                                               HorizontalAlignment="Center" VerticalAlignment="Top"
+                                               Fill="{StaticResource TextPrimaryBrush}"/>
+                                    <Path Data="M 3,9 A 8,8 0 0 0 19,9" Stroke="{StaticResource TextPrimaryBrush}"
+                                          StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    <Line X1="11" Y1="17" X2="11" Y2="20" Stroke="{StaticResource TextPrimaryBrush}" StrokeThickness="1.8"/>
+                                    <Line X1="6" Y1="20" X2="16" Y2="20" Stroke="{StaticResource TextPrimaryBrush}"
+                                          StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    <Line x:Name="MutedSlash" X1="2" Y1="1" X2="20" Y2="19"
+                                          Stroke="{StaticResource TextPrimaryBrush}" StrokeThickness="2"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" Opacity="0"/>
+                                </Grid>
+                                <TextBlock Text="Mic" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource DangerBrush}"/>
+                                <Setter TargetName="MutedSlash" Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="ThinSliderRepeatButtonStyle" TargetType="RepeatButton">
             <Setter Property="OverridesDefaultStyle" Value="True"/>
             <Setter Property="IsTabStop" Value="False"/>

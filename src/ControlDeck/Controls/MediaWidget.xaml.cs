@@ -16,6 +16,7 @@ namespace ControlDeck.Controls;
 public partial class MediaWidget : UserControl, IDisposable
 {
     private readonly AudioService _audio = new();
+    private readonly MicrophoneService _mic = new();
     private readonly MediaSessionService _media = new();
     private readonly DispatcherTimer _playbackTimer;
     private bool _suppressSliderEvent;
@@ -43,6 +44,9 @@ public partial class MediaWidget : UserControl, IDisposable
         MuteButton.IsChecked = _audio.IsMuted;
         UpdateSpeakerWaves();
         _audio.VolumeChanged += OnSystemVolumeChanged;
+
+        MicMuteButton.IsChecked = _mic.IsMuted;
+        _mic.MuteChanged += OnMicMuteChanged;
 
         _playbackTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _playbackTimer.Tick += async (_, _) => await RefreshPlaybackStateAsync();
@@ -74,6 +78,14 @@ public partial class MediaWidget : UserControl, IDisposable
         _audio.IsMuted = MuteButton.IsChecked == true;
         UpdateSpeakerWaves();
     }
+
+    private void OnMicMuteChanged(bool muted)
+    {
+        Dispatcher.Invoke(() => MicMuteButton.IsChecked = muted);
+    }
+
+    private void MicMuteButton_Click(object sender, RoutedEventArgs e)
+        => _mic.IsMuted = MicMuteButton.IsChecked == true;
 
     // 0-3 sound-wave arcs depending on level, none when muted or silent — mirrors how OS volume
     // icons behave. Set as local values rather than via an XAML trigger: local values take
@@ -151,6 +163,8 @@ public partial class MediaWidget : UserControl, IDisposable
     {
         _audio.VolumeChanged -= OnSystemVolumeChanged;
         _audio.Dispose();
+        _mic.MuteChanged -= OnMicMuteChanged;
+        _mic.Dispose();
         _playbackTimer.Stop();
     }
 }
