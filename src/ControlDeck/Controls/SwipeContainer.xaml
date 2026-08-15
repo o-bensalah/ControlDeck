@@ -9,7 +9,12 @@
              PreviewMouseLeftButtonDown="OnPreviewMouseLeftButtonDown"
              PreviewMouseMove="OnPreviewMouseMove"
              PreviewMouseLeftButtonUp="OnPreviewMouseLeftButtonUp"
-             LostMouseCapture="OnLostMouseCapture">
+             LostMouseCapture="OnLostMouseCapture"
+             MouseMove="OnMouseMoveForEdgeReveal"
+             MouseLeave="OnMouseLeaveForEdgeReveal"
+             PreviewTouchDown="OnTouchMoveForEdgeReveal"
+             PreviewTouchMove="OnTouchMoveForEdgeReveal"
+             PreviewTouchUp="OnTouchUpForEdgeReveal">
     <Grid Background="{StaticResource BackgroundBrush}">
         <Canvas x:Name="PageCanvas">
             <Canvas.RenderTransform>
@@ -19,12 +24,19 @@
 
         <Button x:Name="LeftArrow" Content="&#8249;" Style="{StaticResource NavArrowStyle}"
                 HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0"
-                Click="OnLeftArrowClick" Visibility="Collapsed"/>
+                Click="OnLeftArrowClick" Opacity="0" IsHitTestVisible="False"/>
         <Button x:Name="RightArrow" Content="&#8250;" Style="{StaticResource NavArrowStyle}"
                 HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"
-                Click="OnRightArrowClick" Visibility="Collapsed"/>
+                Click="OnRightArrowClick" Opacity="0" IsHitTestVisible="False"/>
 
-        <StackPanel x:Name="DotsPanel" Orientation="Horizontal" HorizontalAlignment="Center"
-                    VerticalAlignment="Bottom" Margin="0,0,0,16"/>
+        <!-- Opaque dark pill behind the dots, not semi-transparent — pages range from a white
+             background to WallpaperPage's dark gradient (or an arbitrary user image), and no
+             single dot-color pair has enough contrast against both extremes (measured: the old
+             colors dropped to 1.87:1 and 1.06:1 depending on the page). An opaque backdrop gives
+             the dots one known, validated surface to sit on regardless of what's underneath. -->
+        <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,16"
+                Background="{StaticResource SurfaceBrush}" CornerRadius="14" Padding="14,7">
+            <StackPanel x:Name="DotsPanel" Orientation="Horizontal"/>
+        </Border>
     </Grid>
 </UserControl>

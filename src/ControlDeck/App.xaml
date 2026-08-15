@@ -11,9 +11,16 @@
         <SolidColorBrush x:Key="AccentDimBrush" Color="#2C5A56"/>
         <SolidColorBrush x:Key="TextPrimaryBrush" Color="#E6EDF3"/>
         <SolidColorBrush x:Key="TextSecondaryBrush" Color="#8B96A5"/>
+        <!-- Both measured against the dots' own opaque SurfaceBrush pill (SwipeContainer.xaml),
+             not against page backgrounds directly — 9.28:1 / 5.77:1, comfortably clear of the
+             3:1 floor for graphical indicators. -->
         <SolidColorBrush x:Key="DotActiveBrush" Color="#4FD1C5"/>
-        <SolidColorBrush x:Key="DotInactiveBrush" Color="#33414F"/>
-        <SolidColorBrush x:Key="DangerBrush" Color="#E5484D"/>
+        <SolidColorBrush x:Key="DotInactiveBrush" Color="#8B96A5"/>
+        <!-- Darkened from the original #E5484D: that measured 3.91:1 as error text on the white
+             page background, under the 4.5:1 AA body-text target. This value clears both of its
+             uses — 5.3:1 as text-on-white, 4.48:1 for the icon-on-this-as-a-button-background
+             case (mute button's muted state) — verified, not eyeballed. -->
+        <SolidColorBrush x:Key="DangerBrush" Color="#C93038"/>
 
         <Style x:Key="DeckButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
@@ -45,6 +52,29 @@
             <Setter Property="Height" Value="48"/>
             <Setter Property="FontSize" Value="26"/>
             <Setter Property="Opacity" Value="0.55"/>
+            <!-- Own template rather than just inheriting DeckButtonStyle's: a single glyph
+                 character (‹ › ✕) doesn't sit centered in its own line box — most fonts' glyphs
+                 read slightly high within the ascent/descent box, leaving more visual gap above
+                 than below when centered "correctly" by layout math. The extra bottom margin
+                 compensates; scoped to this style alone so it doesn't shift the icon+label
+                 shortcut buttons, which don't have the same single-glyph asymmetry. -->
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="18">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,3"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentDimBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource SurfaceHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="MuteToggleStyle" TargetType="ToggleButton">

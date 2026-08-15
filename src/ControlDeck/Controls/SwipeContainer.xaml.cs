@@ -11,11 +11,16 @@ namespace ControlDeck.Controls;
 public partial class SwipeContainer : UserControl
 {
     private const double DragThreshold = 10;
+    private const double EdgeRevealZone = 60;
+    // Off-screen sentinel — Point's default (0,0) would sit inside the left reveal zone, showing
+    // an arrow on startup before any real pointer activity.
+    private static readonly Point OffscreenPointer = new(-1000, -1000);
 
     private readonly List<FrameworkElement> _pages = new();
     private readonly List<Ellipse> _dots = new();
     private int _currentIndex;
     private double _dragStartOffset;
+    private Point _lastPointerPosition = OffscreenPointer;
 
     private bool _mouseDown;
     private bool _mouseDragging;
@@ -98,8 +103,58 @@ public partial class SwipeContainer : UserControl
             _dots[i].Fill = (Brush)FindResource(i == _currentIndex ? "DotActiveBrush" : "DotInactiveBrush");
         }
 
-        LeftArrow.Visibility = _currentIndex > 0 ? Visibility.Visible : Visibility.Collapsed;
-        RightArrow.Visibility = _currentIndex < _pages.Count - 1 ? Visibility.Visible : Visibility.Collapsed;
+        UpdateArrowReveal();
+    }
+
+    // Hidden by default, like MainWindow's close button — only fades in when the pointer is near
+    // the edge it would swipe from AND a page actually exists in that direction. Re-evaluated on
+    // every pointer move (so moving away hides it again) and whenever the page changes (so
+    // reaching the first/last page hides the now-irrelevant arrow even if the pointer hasn't moved).
+    private void UpdateArrowReveal()
+    {
+        bool nearLeft = _lastPointerPosition.X >= 0 && _lastPointerPosition.X <= EdgeRevealZone;
+        bool nearRight = _lastPointerPosition.X >= ActualWidth - EdgeRevealZone;
+
+        SetArrowVisible(LeftArrow, nearLeft && _currentIndex > 0);
+        SetArrowVisible(RightArrow, nearRight && _currentIndex < _pages.Count - 1);
+    }
+
+    // NavArrowStyle's resting look is 0.55 opacity (not fully opaque even when shown) — fade
+    // between that and 0 instead of snapping Visibility, matching the fade used elsewhere in the
+    // app (close button, play/pause).
+    private static void SetArrowVisible(Button arrow, bool visible)
+    {
+        double target = visible ? 0.55 : 0;
+        if (arrow.Opacity == target) return;
+
+        arrow.IsHitTestVisible = visible;
+        arrow.BeginAnimation(OpacityProperty, new DoubleAnimation(target, TimeSpan.FromMilliseconds(180)));
+    }
+
+    private void OnMouseMoveForEdgeReveal(object sender, MouseEventArgs e)
+    {
+        _lastPointerPosition = e.GetPosition(this);
+        UpdateArrowReveal();
+    }
+
+    private void OnMouseLeaveForEdgeReveal(object sender, MouseEventArgs e)
+    {
+        _lastPointerPosition = OffscreenPointer;
+        UpdateArrowReveal();
+    }
+
+    // Touch has no hover — "near the edge" only makes sense while a finger is actually down, so
+    // lifting it (PreviewTouchUp) hides the arrow again rather than leaving it stuck visible.
+    private void OnTouchMoveForEdgeReveal(object sender, TouchEventArgs e)
+    {
+        _lastPointerPosition = e.GetTouchPoint(this).Position;
+        UpdateArrowReveal();
+    }
+
+    private void OnTouchUpForEdgeReveal(object sender, TouchEventArgs e)
+    {
+        _lastPointerPosition = OffscreenPointer;
+        UpdateArrowReveal();
     }
 
     // BeginAnimation(dp, null) doesn't freeze the transform at its current animated position —
