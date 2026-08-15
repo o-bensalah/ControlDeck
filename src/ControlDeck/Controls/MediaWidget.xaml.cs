@@ -17,6 +17,7 @@ public partial class MediaWidget : UserControl, IDisposable
 {
     private readonly AudioService _audio = new();
     private readonly MicrophoneService _mic = new();
+    private readonly AudioOutputService _output = new();
     private readonly MediaSessionService _media = new();
     private readonly DispatcherTimer _playbackTimer;
     private bool _suppressSliderEvent;
@@ -54,9 +55,15 @@ public partial class MediaWidget : UserControl, IDisposable
         Unloaded += (_, _) => _playbackTimer.Stop();
     }
 
+    // BeginInvoke (queue-and-return), not Invoke (blocks and pumps a nested dispatcher frame) —
+    // SetMute/SetVolume call this notification back *synchronously on the calling thread*,
+    // including calling back the very code that triggered the change. When that's the UI thread
+    // (e.g. dragging the slider), a blocking Invoke here would pump a nested message loop from
+    // inside the still-executing native WASAPI call, which reliably crashed the app. Queuing the
+    // update instead lets the native call return and unwind normally first.
     private void OnSystemVolumeChanged(float level, bool muted)
     {
-        Dispatcher.Invoke(() =>
+        Dispatcher.BeginInvoke(() =>
         {
             _suppressSliderEvent = true;
             VolumeSlider.Value = level * 100;
@@ -79,13 +86,54 @@ public partial class MediaWidget : UserControl, IDisposable
         UpdateSpeakerWaves();
     }
 
+    // Same BeginInvoke reasoning as OnSystemVolumeChanged.
     private void OnMicMuteChanged(bool muted)
     {
-        Dispatcher.Invoke(() => MicMuteButton.IsChecked = muted);
+        Dispatcher.BeginInvoke(() => MicMuteButton.IsChecked = muted);
     }
 
     private void MicMuteButton_Click(object sender, RoutedEventArgs e)
         => _mic.IsMuted = MicMuteButton.IsChecked == true;
+
+    private void OutputDeviceButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (OutputDevicePopup.IsOpen)
+        {
+            OutputDevicePopup.IsOpen = false;
+            return;
+        }
+
+        PopulateOutputDevices();
+        OutputDevicePopup.IsOpen = true;
+    }
+
+    // Rebuilt on every open rather than kept in sync live — the device list only changes when a
+    // USB/HDMI device is plugged in or out, and this is a short-lived popup, so a fresh read each
+    // time is simpler than wiring up device add/remove notifications for no real benefit.
+    private void PopulateOutputDevices()
+    {
+        OutputDeviceList.Children.Clear();
+
+        foreach (var device in _output.GetPlaybackDevices())
+        {
+            var item = new Button
+            {
+                Content = (device.IsDefault ? "✓  " : "     ") + device.Name,
+                Style = (Style)FindResource("DeckButtonStyle"),
+                HorizontalContentAlignment = HorizontalAlignment.Left,
+                Padding = new Thickness(16, 14, 16, 14),
+                Margin = new Thickness(0, 0, 0, 10),
+                MinHeight = 48,
+                FontSize = 15,
+            };
+            item.Click += async (_, _) =>
+            {
+                OutputDevicePopup.IsOpen = false;
+                await _output.SetDefaultAsync(device.Id);
+            };
+            OutputDeviceList.Children.Add(item);
+        }
+    }
 
     // 0-3 sound-wave arcs depending on level, none when muted or silent — mirrors how OS volume
     // icons behave. Set as local values rather than via an XAML trigger: local values take
@@ -165,6 +213,7 @@ public partial class MediaWidget : UserControl, IDisposable
         _audio.Dispose();
         _mic.MuteChanged -= OnMicMuteChanged;
         _mic.Dispose();
+        _output.Dispose();
         _playbackTimer.Stop();
     }
 }

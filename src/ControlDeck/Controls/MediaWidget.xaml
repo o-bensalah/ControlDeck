@@ -40,6 +40,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <Button Grid.Column="0" Content="&#9198;" Style="{StaticResource TransportButtonStyle}"
@@ -57,6 +58,21 @@
 
             <ToggleButton x:Name="MicMuteButton" Grid.Column="5" Style="{StaticResource MicMuteToggleStyle}"
                           Width="96" Margin="16,0,0,0" Click="MicMuteButton_Click"/>
+
+            <Button x:Name="OutputDeviceButton" Grid.Column="6" Content="&#128266;"
+                    Style="{StaticResource TransportButtonStyle}" Margin="10,0,0,0"
+                    Click="OutputDeviceButton_Click"/>
         </Grid>
+
+        <!-- Popup rather than an inline expanding panel — the device list is short-lived and
+             shouldn't push the rest of the control row around when it opens. StaysOpen="False" so
+             a tap anywhere else (including another page after a swipe) dismisses it. -->
+        <Popup x:Name="OutputDevicePopup" Grid.Row="1" PlacementTarget="{Binding ElementName=OutputDeviceButton}"
+               Placement="Top" StaysOpen="False" AllowsTransparency="True">
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="14" Padding="10"
+                    BorderBrush="{StaticResource SurfaceHoverBrush}" BorderThickness="1.5">
+                <StackPanel x:Name="OutputDeviceList" MinWidth="240"/>
+            </Border>
+        </Popup>
     </Grid>
 </UserControl>

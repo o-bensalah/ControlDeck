@@ -11,8 +11,13 @@
     <!-- WFAC010 wants DPI awareness set via WinForms' ApplicationHighDpiMode instead of the
          manifest, but we have no WinForms UI (UseWindowsForms is only here for Screen
          enumeration) — the manifest's Per-Monitor-V2 setting is what KioskWindowPlacementService
-         actually needs and must stay. -->
-    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+         actually needs and must stay.
+         NU1701 flags AudioSwitcher.AudioApi(.CoreAudio) as .NET-Framework-only with no net8.0
+         asset — there's no newer build targeting net8+, but it's been exercised through several
+         real build/run/output-switch cycles on this TFM (including under load: mid-switch races
+         and reentrant COM callbacks that needed their own fixes) with no compatibility issues, so
+         the warning is a generic mismatch notice, not a detected problem. -->
+    <NoWarn>$(NoWarn);WFAC010;NU1701</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AudioSwitcher.AudioApi.CoreAudio" Version="3.0.3" />
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4129.50" />
     <PackageReference Include="NAudio" Version="2.3.0" />
