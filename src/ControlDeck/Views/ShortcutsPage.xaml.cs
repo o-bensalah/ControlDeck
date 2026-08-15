@@ -5,19 +5,30 @@ using ControlDeck.Services;
 
 namespace ControlDeck.Views;
 
-public partial class DashboardPage : UserControl, IDisposable
+// One page class handles every "page" of shortcuts, however many the catalog needs — MainWindow
+// chunks AppLauncherCatalog.Load() into groups and creates one instance per chunk. Only the first
+// chunk shows metrics (RefreshMetricsAsync/_hardware are null otherwise); every instance gets its
+// own MediaWidget so playback controls stay reachable no matter which shortcuts page is showing.
+public partial class ShortcutsPage : UserControl, IDisposable
 {
-    private readonly AudioService _audio = new();
-    private readonly HardwareMonitorService _hardware = new();
-    private readonly MediaSessionService _media = new();
-    private readonly DispatcherTimer _metricsTimer;
-    private bool _suppressSliderEvent;
+    // Fixed grid shape rather than letting UniformGrid auto-size rows from child count — a page
+    // with fewer buttons (the last, partly-filled chunk) would otherwise stretch its cells bigger
+    // than a full page's. Empty cells on a partial page just stay blank instead.
+    internal const int GridColumns = 4;
+    internal const int GridRows = 3;
+    internal const int MaxEntriesPerPage = GridColumns * GridRows;
 
-    public DashboardPage()
+    private readonly HardwareMonitorService? _hardware;
+    private readonly DispatcherTimer? _metricsTimer;
+
+    internal ShortcutsPage(IReadOnlyList<AppLauncherEntry> entries, bool showMetrics)
     {
         InitializeComponent();
 
-        foreach (var entry in AppLauncherCatalog.Load())
+        ShortcutsGrid.Rows = GridRows;
+        ShortcutsGrid.Columns = GridColumns;
+
+        foreach (var entry in entries)
         {
             var button = new Button
             {
@@ -29,50 +40,22 @@ public partial class DashboardPage : UserControl, IDisposable
             ShortcutsGrid.Children.Add(button);
         }
 
-        VolumeSlider.Value = _audio.Volume * 100;
-        MuteButton.IsChecked = _audio.IsMuted;
-        _audio.VolumeChanged += OnSystemVolumeChanged;
-
-        _metricsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _metricsTimer.Tick += async (_, _) =>
+        if (showMetrics)
         {
-            await RefreshMetricsAsync();
-            await RefreshPlaybackStateAsync();
-        };
-        Loaded += (_, _) => _metricsTimer.Start();
-        Unloaded += (_, _) => _metricsTimer.Stop();
-    }
-
-    private void OnSystemVolumeChanged(float level, bool muted)
-    {
-        Dispatcher.Invoke(() =>
+            _hardware = new HardwareMonitorService();
+            _metricsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _metricsTimer.Tick += async (_, _) => await RefreshMetricsAsync();
+            Loaded += (_, _) => _metricsTimer.Start();
+            Unloaded += (_, _) => _metricsTimer.Stop();
+        }
+        else
         {
-            _suppressSliderEvent = true;
-            VolumeSlider.Value = level * 100;
-            MuteButton.IsChecked = muted;
-            _suppressSliderEvent = false;
-        });
-    }
-
-    private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-    {
-        if (_suppressSliderEvent) return;
-        _audio.Volume = (float)(e.NewValue / 100.0);
-    }
-
-    private void MuteButton_Click(object sender, RoutedEventArgs e) => _audio.IsMuted = MuteButton.IsChecked == true;
-
-    // The ToggleButton flips its own IsChecked (and plays the crossfade animation) immediately
-    // on click, before this handler runs — the next timer tick self-corrects it if the toggle
-    // didn't actually take (e.g. no active media session).
-    private async void PlayPause_Click(object sender, RoutedEventArgs e) => await _media.TogglePlayPauseAsync();
-    private async void PreviousTrack_Click(object sender, RoutedEventArgs e) => await _media.SkipPreviousAsync();
-    private async void NextTrack_Click(object sender, RoutedEventArgs e) => await _media.SkipNextAsync();
-
-    private async Task RefreshPlaybackStateAsync()
-    {
-        bool isPlaying = await _media.IsPlayingAsync();
-        if (PlayPauseButton.IsChecked != isPlaying) PlayPauseButton.IsChecked = isPlaying;
+            // MetricsRow keeps its height reserved (not collapsed to 0) even when hidden, so
+            // Row0 gets the exact same available height on every shortcuts page — otherwise a
+            // page without metrics would have extra vertical room, growing its button cells
+            // taller than a page with metrics, the same inconsistency as the row-count issue.
+            MetricsPanel.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void LaunchApp(AppLauncherEntry entry)
@@ -84,7 +67,7 @@ public partial class DashboardPage : UserControl, IDisposable
 
     private async Task RefreshMetricsAsync()
     {
-        var snapshot = await Task.Run(() => _hardware.Read());
+        var snapshot = await Task.Run(() => _hardware!.Read());
 
         CpuLoadText.Text = $"{snapshot.CpuLoad:0}%";
         CpuTempText.Text = snapshot.CpuTemp is { } cpuTemp ? $"{cpuTemp:0}°C" : "—";
@@ -122,9 +105,7 @@ public partial class DashboardPage : UserControl, IDisposable
 
     public void Dispose()
     {
-        _audio.VolumeChanged -= OnSystemVolumeChanged;
-        _audio.Dispose();
-        _metricsTimer.Stop();
-        _hardware.Dispose();
+        _metricsTimer?.Stop();
+        _hardware?.Dispose();
     }
 }

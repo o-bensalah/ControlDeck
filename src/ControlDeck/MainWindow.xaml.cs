@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
@@ -14,7 +15,7 @@ public partial class MainWindow : Window
     private const double TopEdgeHotZoneHeight = 36;
     private const double TouchRevealDragDistance = 40;
 
-    private readonly DashboardPage _dashboardPage = new();
+    private readonly List<ShortcutsPage> _shortcutsPages;
     private readonly StreamingPage _streamingPage = new();
     private readonly WallpaperPage _wallpaperPage = new();
     private readonly Dictionary<int, Point> _activeTopTouches = new();
@@ -27,17 +28,27 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        // Chunk into as many pages as the catalog needs (12 buttons each) instead of a single
+        // fixed page — only the first chunk shows metrics; every chunk gets its own MediaWidget.
+        // Guard against an empty catalog (e.g. the user emptied the JSON) still yielding at least
+        // one page, so metrics/media controls remain reachable.
+        var chunks = AppLauncherCatalog.Load().Chunk(ShortcutsPage.MaxEntriesPerPage).ToList();
+        if (chunks.Count == 0) chunks.Add(Array.Empty<AppLauncherEntry>());
+        _shortcutsPages = chunks
+            .Select((chunk, index) => new ShortcutsPage(chunk, showMetrics: index == 0))
+            .ToList();
+
         SourceInitialized += (_, _) => KioskWindowPlacementService.PlaceOnTargetScreen(this);
         Loaded += (_, _) =>
         {
-            Deck.AddPage(_dashboardPage);
+            foreach (var page in _shortcutsPages) Deck.AddPage(page);
             Deck.AddPage(_streamingPage);
             Deck.AddPage(_wallpaperPage);
             Deck.GoToPage(0, animate: false);
         };
         Closed += (_, _) =>
         {
-            _dashboardPage.Dispose();
+            foreach (var page in _shortcutsPages) page.Dispose();
             _streamingPage.Dispose();
         };
     }
