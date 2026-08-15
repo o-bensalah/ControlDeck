@@ -57,12 +57,39 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
+                        <!-- Self-contained: the speaker icon (body + 0-3 sound-wave arcs / crossed-out
+                             when muted) and "Mute" label are baked into the template itself, not
+                             passed in as Content, so every consumer gets the same dynamic icon for
+                             free. Wave1/2/3 opacity is driven from code-behind (volume level), not
+                             a trigger here — only the muted crossover and background react to
+                             IsChecked directly. -->
                         <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="14">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Grid Width="30" Height="20" Margin="0,0,8,0">
+                                    <Polygon Points="1,6 6,6 11,1 11,19 6,14 1,14" Fill="{StaticResource TextPrimaryBrush}"/>
+                                    <Path x:Name="Wave1" Data="M 13,7 A 3,3 0 0 1 13,13"
+                                          Stroke="{StaticResource TextPrimaryBrush}" StrokeThickness="1.8"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    <Path x:Name="Wave2" Data="M 15,4 A 6,6 0 0 1 15,16"
+                                          Stroke="{StaticResource TextPrimaryBrush}" StrokeThickness="1.8"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    <Path x:Name="Wave3" Data="M 17,1 A 9,9 0 0 1 17,19"
+                                          Stroke="{StaticResource TextPrimaryBrush}" StrokeThickness="1.8"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    <Grid x:Name="MutedIcon" Opacity="0">
+                                        <Line X1="13" Y1="4" X2="25" Y2="16" Stroke="{StaticResource TextPrimaryBrush}"
+                                              StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Line X1="25" Y1="4" X2="13" Y2="16" Stroke="{StaticResource TextPrimaryBrush}"
+                                              StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                    </Grid>
+                                </Grid>
+                                <TextBlock Text="Mute" VerticalAlignment="Center"/>
+                            </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{StaticResource DangerBrush}"/>
+                                <Setter TargetName="MutedIcon" Property="Opacity" Value="1"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

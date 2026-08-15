@@ -32,9 +32,9 @@ public partial class ShortcutsPage : UserControl, IDisposable
         {
             var button = new Button
             {
-                Content = entry.Name,
+                Content = BuildButtonContent(entry),
                 Style = (Style)FindResource("DeckButtonStyle"),
-                Margin = new Thickness(10),
+                Margin = new Thickness(6),
             };
             button.Click += (_, _) => LaunchApp(entry);
             ShortcutsGrid.Children.Add(button);
@@ -56,6 +56,27 @@ public partial class ShortcutsPage : UserControl, IDisposable
             // taller than a page with metrics, the same inconsistency as the row-count issue.
             MetricsPanel.Visibility = Visibility.Collapsed;
         }
+    }
+
+    private static object BuildButtonContent(AppLauncherEntry entry)
+    {
+        if (string.IsNullOrEmpty(entry.Icon)) return entry.Name;
+
+        var panel = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+        panel.Children.Add(new TextBlock
+        {
+            Text = entry.Icon,
+            FontSize = 40,
+            HorizontalAlignment = HorizontalAlignment.Center,
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = entry.Name,
+            FontSize = 20,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 8, 0, 0),
+        });
+        return panel;
     }
 
     private void LaunchApp(AppLauncherEntry entry)

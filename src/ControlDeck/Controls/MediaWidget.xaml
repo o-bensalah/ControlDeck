@@ -17,8 +17,8 @@
         <Button Grid.Column="2" Content="&#9197;" Style="{StaticResource TransportButtonStyle}"
                 Margin="0,0,24,0" Click="NextTrack_Click"/>
 
-        <ToggleButton x:Name="MuteButton" Grid.Column="3" Content="Mute" Style="{StaticResource MuteToggleStyle}"
-                      Width="80" Margin="0,0,16,0" Click="MuteButton_Click"/>
+        <ToggleButton x:Name="MuteButton" Grid.Column="3" Style="{StaticResource MuteToggleStyle}"
+                      Width="104" Margin="0,0,16,0" Click="MuteButton_Click"/>
         <Slider x:Name="VolumeSlider" Grid.Column="4" Style="{StaticResource VolumeSliderStyle}"
                 AutoToolTipPlacement="BottomRight" AutoToolTipPrecision="0"
                 ValueChanged="VolumeSlider_ValueChanged" Height="40" VerticalAlignment="Center"/>

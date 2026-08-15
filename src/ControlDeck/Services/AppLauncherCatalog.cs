@@ -9,7 +9,10 @@ namespace ControlDeck.Services;
 // SystemActionsService directly rather than launching a process; Command is unused for those and
 // defaults to empty. AppLauncherService switches on Type; unrecognized types fail gracefully with
 // an error message rather than crashing, so the JSON format can grow without a breaking migration.
-internal sealed record AppLauncherEntry(string Name, string Type, string Command = "", string? Arguments = null);
+// Icon is a plain Unicode glyph/emoji (not an icon-font codepoint) since this file is meant to be
+// hand-edited — "paste an emoji" beats "look up a hex code" for a config file. Optional: entries
+// without one just show the label alone.
+internal sealed record AppLauncherEntry(string Name, string Type, string Command = "", string? Arguments = null, string? Icon = null);
 
 internal static class AppLauncherCatalog
 {
@@ -19,17 +22,17 @@ internal static class AppLauncherCatalog
 
     private static readonly AppLauncherEntry[] Defaults =
     {
-        new("PrtScn", "printscreen"),
-        new("Lock", "lock"),
-        new("Show Desktop", "showdesktop"),
-        new("Sleep", "sleep"),
-        new("Task Manager", "command", "taskmgr.exe"),
-        new("File Explorer", "command", "explorer.exe"),
-        new("Notepad", "command", "notepad.exe"),
-        new("Calculator", "command", "calc.exe"),
-        new("Paint", "command", "mspaint.exe"),
-        new("Command Prompt", "command", "cmd.exe"),
-        new("Settings", "command", "ms-settings:"),
+        new("PrtScn", "printscreen", Icon: "📷"),
+        new("Lock", "lock", Icon: "🔒"),
+        new("Show Desktop", "showdesktop", Icon: "🖥"),
+        new("Sleep", "sleep", Icon: "🌙"),
+        new("Task Manager", "command", "taskmgr.exe", Icon: "📊"),
+        new("File Explorer", "command", "explorer.exe", Icon: "📁"),
+        new("Notepad", "command", "notepad.exe", Icon: "📝"),
+        new("Calculator", "command", "calc.exe", Icon: "🧮"),
+        new("Paint", "command", "mspaint.exe", Icon: "🎨"),
+        new("Command Prompt", "command", "cmd.exe", Icon: "⌨"),
+        new("Settings", "command", "ms-settings:", Icon: "⚙"),
     };
 
     private static readonly JsonSerializerOptions JsonOptions = new()
