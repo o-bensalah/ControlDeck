@@ -1,7 +1,12 @@
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ControlDeck.Services;
+using Windows.Storage.Streams;
 
 namespace ControlDeck.Controls;
 
@@ -18,6 +23,8 @@ public partial class MediaWidget : UserControl, IDisposable
     private FrameworkElement? _wave1;
     private FrameworkElement? _wave2;
     private FrameworkElement? _wave3;
+    private string? _lastArtTitle;
+    private string? _lastArtArtist;
 
     public MediaWidget()
     {
@@ -93,8 +100,51 @@ public partial class MediaWidget : UserControl, IDisposable
 
     private async Task RefreshPlaybackStateAsync()
     {
-        bool isPlaying = await _media.IsPlayingAsync();
+        var info = await _media.GetMediaInfoAsync();
+
+        bool isPlaying = info?.IsPlaying ?? false;
         if (PlayPauseButton.IsChecked != isPlaying) PlayPauseButton.IsChecked = isPlaying;
+
+        if (string.IsNullOrEmpty(info?.Title))
+        {
+            NowPlayingPanel.Visibility = Visibility.Collapsed;
+            _lastArtTitle = null;
+            _lastArtArtist = null;
+            return;
+        }
+
+        NowPlayingPanel.Visibility = Visibility.Visible;
+        NowPlayingTitle.Text = info.Title;
+        NowPlayingArtist.Text = info.Artist ?? "";
+
+        // Only re-decode artwork when the track actually changes, not on every 1s poll.
+        if (info.Title != _lastArtTitle || info.Artist != _lastArtArtist)
+        {
+            _lastArtTitle = info.Title;
+            _lastArtArtist = info.Artist;
+            NowPlayingArt.Source = await LoadThumbnailAsync(info.Thumbnail);
+        }
+    }
+
+    private static async Task<BitmapImage?> LoadThumbnailAsync(IRandomAccessStreamReference? thumbnailRef)
+    {
+        if (thumbnailRef is null) return null;
+
+        try
+        {
+            using var stream = await thumbnailRef.OpenReadAsync();
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.StreamSource = stream.AsStream();
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
+        catch (Exception ex) when (ex is COMException or IOException)
+        {
+            return null;
+        }
     }
 
     public void Dispose()

@@ -1,14 +1,21 @@
 using Windows.Media.Control;
+using Windows.Storage.Streams;
 
 namespace ControlDeck.Services;
 
+internal sealed record MediaInfo(bool IsPlaying, string? Title, string? Artist, IRandomAccessStreamReference? Thumbnail);
+
 internal sealed class MediaSessionService
 {
-    public async Task<bool> IsPlayingAsync()
+    public async Task<MediaInfo?> GetMediaInfoAsync()
     {
         var session = await GetCurrentSessionAsync();
-        if (session is null) return false;
-        return session.GetPlaybackInfo()?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+        if (session is null) return null;
+
+        bool isPlaying = session.GetPlaybackInfo()?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+        var props = await session.TryGetMediaPropertiesAsync();
+
+        return new MediaInfo(isPlaying, props?.Title, props?.Artist, props?.Thumbnail);
     }
 
     public async Task TogglePlayPauseAsync()
