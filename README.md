@@ -1,24 +1,24 @@
 # ControlDeck
 
 A custom WPF kiosk app for repurposing a spare touchscreen monitor as a second-display control
-deck for a Windows PC — shortcuts, live system metrics, streaming services, and media/audio
+deck for a Windows PC: shortcuts, live system metrics, streaming services, and media/audio
 controls, all swipeable by touch or mouse. 
 
 ## Features
 
-- **Shortcuts pages** — a JSON-configurable grid of app launchers (run a command, or trigger a
+- **Shortcuts pages**: a JSON-configurable grid of app launchers (run a command, or trigger a
   system action: lock, sleep, show desktop, print screen). Auto-paginates as entries are added.
   The first page also shows a live hardware metrics row (CPU/GPU load & temp, RAM, disk, network,
   uptime).
-- **Streaming page** — a JSON-configurable picker grid of streaming services that opens into an
+- **Streaming page**: a JSON-configurable picker grid of streaming services that opens into an
   embedded browser (WebView2) with native ad-block and popup-block filtering.
-- **Wallpaper page** — a clock over a gradient background, or a custom image if you drop one in.
+- **Wallpaper page**: a clock over a gradient background, or a custom image if you drop one in.
 - **Shared media/control widget**, embedded at the bottom of every shortcuts page:
   - Now-playing title/artist/art, pulled from whatever's playing system-wide
   - Play/pause/skip transport controls
   - Volume slider + mute, auto-retargeting when you switch the active output device
   - Microphone mute toggle
-  - Output device switcher — change Windows' default playback device from the kiosk itself
+  - Output device switcher: change Windows' default playback device from the kiosk itself
 - **Touch and mouse swipe** between pages, with edge-reveal navigation arrows and a hidden
   close button that appears near the top edge.
 - Runs borderless/topmost, positioned on whichever monitor you designate as the kiosk display.
@@ -36,66 +36,52 @@ dotnet build ControlDeck.sln
 dotnet run --project src\ControlDeck
 ```
 
-The app manifest requests `requireAdministrator` — needed for `LibreHardwareMonitorLib` to read
-full sensor data (it loads a small kernel driver). Expect a UAC prompt.
+The app manifest requests `requireAdministrator` (needed for `LibreHardwareMonitorLib` to read
+full sensor data, since it loads a small kernel driver). Expect a UAC prompt.
 
 **Dev note:** `dotnet run`/launching the built `.exe` directly goes through the apphost, which
 enforces the manifest's elevation requirement and will prompt for UAC (or fail non-interactively).
-Running the DLL directly via the shared host — `dotnet bin\Debug\net8.0-windows10.0.19041.0\ControlDeck.dll` —
-bypasses that gate, which is useful for quick unelevated smoke tests but won't have full sensor
-access.
+Running the DLL directly via the shared host instead, `dotnet bin\Debug\net8.0-windows10.0.19041.0\ControlDeck.dll`,
+bypasses that gate, which is useful for quick unelevated smoke tests; full sensor access needs the
+elevated apphost path above.
 
 ## Configuration
 
 On first run, ControlDeck writes one editable config file: `%LOCALAPPDATA%\ControlDeck\config.json`,
 with three top-level sections:
 
-- `AppLaunchers` — the shortcuts grid entries
-- `StreamingServices` — the streaming service picker entries
-- `DisplayDeviceName` / `DisplayNumber` — which monitor to run on (see below)
+- `AppLaunchers`: the shortcuts grid entries
+- `StreamingServices`: the streaming service picker entries
+- `DisplayDeviceName` / `DisplayNumber`: which monitor to run on (see below)
 
-`wallpaper.jpg` (optional, not auto-generated, and not part of `config.json`) can still be dropped
-into the same folder to replace the default gradient on the Wallpaper page.
+`wallpaper.jpg` (optional) can be dropped into the same folder to replace the default gradient on
+the Wallpaper page.
 
-Edit `config.json` directly and restart the app to pick up changes — no rebuild required. Each
-section falls back independently to its own built-in defaults if it's missing or empty, and if the
-whole file fails to parse, every section falls back for that session without overwriting what's on
-disk.
+Edit `config.json` directly; a restart picks up the changes. Each section falls back independently
+to its own built-in defaults if it's missing or empty. If the whole file fails to parse, every
+section falls back for that session, leaving the file on disk untouched.
 
-The built-in `AppLaunchers`/`StreamingServices` defaults themselves live in
-[`src/ControlDeck/Assets/defaults.json`](src/ControlDeck/Assets/defaults.json), embedded into the
-built app rather than hardcoded in C# — that file is what gets copied into a fresh `config.json`
-the first time the app runs with no config present, and what a section falls back to if it's
-missing or empty. Edit it and rebuild to change what ships out of the box.
-
-If you're updating from a version that used the old separate `app-launchers.json` /
-`streaming-services.json` / `display.json` files, ControlDeck migrates them into `config.json`
-automatically the first time it runs and removes the old files — nothing to do by hand.
+The built-in `AppLaunchers`/`StreamingServices` defaults live in
+[`src/ControlDeck/Assets/defaults.json`](src/ControlDeck/Assets/defaults.json). Edit it and rebuild
+to change what ships out of the box.
 
 ### Choosing the kiosk display
 
-On first run, `config.json` includes a `DetectedDisplays` list showing every currently connected
-monitor — its Windows device name, a parsed display number, resolution, and whether it's the
-primary. Copy the `DisplayNumber` of the monitor you want ControlDeck to run on into the top-level
-`DisplayNumber` field (or the exact `DeviceName` into `DisplayDeviceName`, which is checked first
-if both are set), then restart:
+Set `DisplayNumber` in `config.json` to the number of the monitor you want ControlDeck to run on.
+Find it in Windows' Display Settings (click "Identify" to see each monitor's number), or use the
+exact `DeviceName` (e.g. `\\.\DISPLAY2`) instead, which is checked first if both are set:
 
 ```json
 {
   "AppLaunchers": [ ... ],
   "StreamingServices": [ ... ],
   "DisplayDeviceName": null,
-  "DisplayNumber": 1,
-  "DetectedDisplays": [ ... ]
+  "DisplayNumber": 1
 }
 ```
 
-If neither is set, or the configured monitor isn't currently connected, ControlDeck falls back to
-the first non-primary display, or the primary display if that's the only one available.
-`DetectedDisplays` itself is only a reference, written once, and isn't read back — it won't update
-on its own if you reconnect monitors in a different order later. To refresh it, delete the whole
-`config.json` (this also resets `AppLaunchers`/`StreamingServices` to defaults, so copy anything
-you've customized there first) and relaunch.
+If neither is set, or the configured monitor is disconnected, ControlDeck falls back to the first
+non-primary display, or the primary display if that's the only one available.
 
 ## Project layout
 
@@ -104,7 +90,7 @@ src/ControlDeck/
   App.xaml(.cs)              Application-wide styles/resources, startup
   MainWindow.xaml(.cs)       Hosts the swipeable page deck
   Assets/
-    defaults.json            Built-in AppLaunchers/StreamingServices defaults, embedded at build time
+    defaults.json            Built-in AppLaunchers/StreamingServices defaults
   Controls/
     SwipeContainer           Touch/mouse page-swipe host, page dots, edge-reveal nav arrows
     MediaWidget              Shared now-playing/transport/volume/mic/output-device controls
@@ -113,7 +99,7 @@ src/ControlDeck/
     StreamingPage            Streaming service picker + embedded WebView2 browser
     WallpaperPage            Clock + background
   Services/
-    ControlDeckConfig               config.json — shortcuts, streaming services, display selection
+    ControlDeckConfig               config.json: shortcuts, streaming services, display selection
     AppLauncherService              Launching shortcuts (commands + system actions)
     AdBlockList                    WebView2 ad/tracker request filtering
     SystemActionsService           Lock/sleep/show desktop/print screen
@@ -123,10 +109,29 @@ src/ControlDeck/
     KioskWindowPlacementService    Positions the window on the target monitor, using ControlDeckConfig
 ```
 
-## Not yet set up
+## Auto-start at logon
 
-These are manual, hardware-dependent steps outside the app itself:
+Registered as a Task Scheduler entry, so it launches elevated automatically at logon. Build a
+Release copy first, since that's what should run permanently:
 
-- **Auto-start at logon** — register a Task Scheduler entry (run with highest privileges, trigger
-  at logon) so the app launches elevated without a UAC prompt each login, rather than a Startup
-  folder shortcut.
+```
+dotnet build ControlDeck.sln -c Release
+```
+
+Then, from an **elevated** PowerShell (registering a task with `/rl highest` requires it):
+
+```powershell
+schtasks /create /tn "ControlDeck" /tr '"D:\git\ControlDeck\src\ControlDeck\bin\Release\net8.0-windows10.0.19041.0\ControlDeck.exe"' /sc onlogon /rl highest /f
+```
+
+Use single quotes around the `/tr` value as shown, so PowerShell passes the inner `"..."` through
+literally to `schtasks`.
+
+Verify it registered:
+
+```powershell
+schtasks /query /tn "ControlDeck" /v /fo list
+```
+
+Rebuilding Release after a code change updates the exe in place, so the registered task keeps
+pointing at the current build automatically.

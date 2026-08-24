@@ -2,7 +2,6 @@ using System.IO;
 using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Windows.Forms;
 
 namespace ControlDeck.Services;
 
@@ -200,35 +199,15 @@ internal static class ControlDeckConfig
         return true;
     }
 
-    // Only writes once, the first time the app runs with no config present at all. Includes a
-    // DetectedDisplays list purely as a reference for filling in DisplayNumber by hand — not read
-    // back on Load (ControlDeckConfigData has no matching property, and System.Text.Json ignores
-    // unknown JSON members by default).
+    // Only writes once, the first time the app runs with no config present at all.
     private static void TryWriteTemplate()
     {
         try
         {
             if (File.Exists(ConfigPath)) return;
 
-            var detected = Screen.AllScreens
-                .Select(s => new
-                {
-                    s.DeviceName,
-                    DisplayNumber = ParseDisplayNumber(s.DeviceName),
-                    IsPrimary = s.Primary,
-                    Resolution = $"{s.Bounds.Width}x{s.Bounds.Height}",
-                })
-                .ToArray();
-
             var defaults = GetDefaults();
-            var template = new
-            {
-                AppLaunchers = defaults.AppLaunchers,
-                StreamingServices = defaults.StreamingServices,
-                DisplayDeviceName = (string?)null,
-                DisplayNumber = (int?)null,
-                DetectedDisplays = detected,
-            };
+            var template = new ControlDeckConfigData(defaults.AppLaunchers, defaults.StreamingServices);
 
             Directory.CreateDirectory(ConfigDir);
             File.WriteAllText(ConfigPath, JsonSerializer.Serialize(template, JsonOptions));
