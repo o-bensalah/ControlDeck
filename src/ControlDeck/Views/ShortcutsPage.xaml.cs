@@ -6,7 +6,7 @@ using ControlDeck.Services;
 namespace ControlDeck.Views;
 
 // One page class handles every "page" of shortcuts, however many the catalog needs — MainWindow
-// chunks AppLauncherCatalog.Load() into groups and creates one instance per chunk. Only the first
+// chunks ControlDeckConfig.LoadAppLaunchers() into groups and creates one instance per chunk. Only the first
 // chunk shows metrics (RefreshMetricsAsync/_hardware are null otherwise); every instance gets its
 // own MediaWidget so playback controls stay reachable no matter which shortcuts page is showing.
 public partial class ShortcutsPage : UserControl, IDisposable

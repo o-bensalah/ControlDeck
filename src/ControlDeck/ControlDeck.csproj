@@ -29,6 +29,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Built into the assembly (not copied loose to the output folder) so the app's built-in
+         defaults can never go missing or get out of sync with the exe — ControlDeckConfig reads
+         this back via GetManifestResourceStream, the single source of truth for defaults instead
+         of a hardcoded C# array. -->
+    <EmbeddedResource Include="Assets\defaults.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AudioSwitcher.AudioApi.CoreAudio" Version="3.0.3" />
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4129.50" />

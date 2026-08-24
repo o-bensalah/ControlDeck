@@ -47,15 +47,55 @@ access.
 
 ## Configuration
 
-On first run, ControlDeck writes editable JSON config to `%LOCALAPPDATA%\ControlDeck\`:
+On first run, ControlDeck writes one editable config file: `%LOCALAPPDATA%\ControlDeck\config.json`,
+with three top-level sections:
 
-- `app-launchers.json` — the shortcuts grid entries
-- `streaming-services.json` — the streaming service picker entries
-- `wallpaper.jpg` (optional, not auto-generated) — drop an image here to replace the default
-  gradient on the Wallpaper page
+- `AppLaunchers` — the shortcuts grid entries
+- `StreamingServices` — the streaming service picker entries
+- `DisplayDeviceName` / `DisplayNumber` — which monitor to run on (see below)
 
-Edit these directly and restart the app to pick up changes — no rebuild required. If a file is
-missing or malformed, ControlDeck regenerates it from built-in defaults.
+`wallpaper.jpg` (optional, not auto-generated, and not part of `config.json`) can still be dropped
+into the same folder to replace the default gradient on the Wallpaper page.
+
+Edit `config.json` directly and restart the app to pick up changes — no rebuild required. Each
+section falls back independently to its own built-in defaults if it's missing or empty, and if the
+whole file fails to parse, every section falls back for that session without overwriting what's on
+disk.
+
+The built-in `AppLaunchers`/`StreamingServices` defaults themselves live in
+[`src/ControlDeck/Assets/defaults.json`](src/ControlDeck/Assets/defaults.json), embedded into the
+built app rather than hardcoded in C# — that file is what gets copied into a fresh `config.json`
+the first time the app runs with no config present, and what a section falls back to if it's
+missing or empty. Edit it and rebuild to change what ships out of the box.
+
+If you're updating from a version that used the old separate `app-launchers.json` /
+`streaming-services.json` / `display.json` files, ControlDeck migrates them into `config.json`
+automatically the first time it runs and removes the old files — nothing to do by hand.
+
+### Choosing the kiosk display
+
+On first run, `config.json` includes a `DetectedDisplays` list showing every currently connected
+monitor — its Windows device name, a parsed display number, resolution, and whether it's the
+primary. Copy the `DisplayNumber` of the monitor you want ControlDeck to run on into the top-level
+`DisplayNumber` field (or the exact `DeviceName` into `DisplayDeviceName`, which is checked first
+if both are set), then restart:
+
+```json
+{
+  "AppLaunchers": [ ... ],
+  "StreamingServices": [ ... ],
+  "DisplayDeviceName": null,
+  "DisplayNumber": 1,
+  "DetectedDisplays": [ ... ]
+}
+```
+
+If neither is set, or the configured monitor isn't currently connected, ControlDeck falls back to
+the first non-primary display, or the primary display if that's the only one available.
+`DetectedDisplays` itself is only a reference, written once, and isn't read back — it won't update
+on its own if you reconnect monitors in a different order later. To refresh it, delete the whole
+`config.json` (this also resets `AppLaunchers`/`StreamingServices` to defaults, so copy anything
+you've customized there first) and relaunch.
 
 ## Project layout
 
@@ -63,6 +103,8 @@ missing or malformed, ControlDeck regenerates it from built-in defaults.
 src/ControlDeck/
   App.xaml(.cs)              Application-wide styles/resources, startup
   MainWindow.xaml(.cs)       Hosts the swipeable page deck
+  Assets/
+    defaults.json            Built-in AppLaunchers/StreamingServices defaults, embedded at build time
   Controls/
     SwipeContainer           Touch/mouse page-swipe host, page dots, edge-reveal nav arrows
     MediaWidget              Shared now-playing/transport/volume/mic/output-device controls
@@ -71,14 +113,14 @@ src/ControlDeck/
     StreamingPage            Streaming service picker + embedded WebView2 browser
     WallpaperPage            Clock + background
   Services/
-    AppLauncherCatalog/Service     Shortcuts JSON config + launching
-    StreamingServiceCatalog        Streaming services JSON config
+    ControlDeckConfig               config.json — shortcuts, streaming services, display selection
+    AppLauncherService              Launching shortcuts (commands + system actions)
     AdBlockList                    WebView2 ad/tracker request filtering
     SystemActionsService           Lock/sleep/show desktop/print screen
     AudioService / MicrophoneService / AudioOutputService   System volume, mic mute, output switching
     HardwareMonitorService         CPU/GPU/RAM/disk/network sensors
     MediaSessionService            System-wide now-playing/transport control
-    KioskWindowPlacementService    Positions the window on the target monitor
+    KioskWindowPlacementService    Positions the window on the target monitor, using ControlDeckConfig
 ```
 
 ## Not yet set up

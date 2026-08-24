@@ -32,7 +32,7 @@ public partial class MainWindow : Window
         // fixed page — only the first chunk shows metrics; every chunk gets its own MediaWidget.
         // Guard against an empty catalog (e.g. the user emptied the JSON) still yielding at least
         // one page, so metrics/media controls remain reachable.
-        var chunks = AppLauncherCatalog.Load().Chunk(ShortcutsPage.MaxEntriesPerPage).ToList();
+        var chunks = ControlDeckConfig.LoadAppLaunchers().Chunk(ShortcutsPage.MaxEntriesPerPage).ToList();
         if (chunks.Count == 0) chunks.Add(Array.Empty<AppLauncherEntry>());
         _shortcutsPages = chunks
             .Select((chunk, index) => new ShortcutsPage(chunk, showMetrics: index == 0))

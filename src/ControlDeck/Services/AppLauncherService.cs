@@ -13,14 +13,12 @@ internal static class AppLauncherService
             case "command":
                 return TryLaunchCommand(entry.Command, entry.Arguments, out error);
             case "printscreen":
-                SystemActionsService.PrintScreen();
-                return true;
+                return SystemActionsService.TryPrintScreen(out error);
             case "lock":
                 SystemActionsService.Lock();
                 return true;
             case "showdesktop":
-                SystemActionsService.ShowDesktop();
-                return true;
+                return SystemActionsService.TryShowDesktop(out error);
             case "sleep":
                 SystemActionsService.Sleep();
                 return true;

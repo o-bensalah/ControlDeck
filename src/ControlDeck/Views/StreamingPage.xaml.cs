@@ -12,7 +12,7 @@ public partial class StreamingPage : UserControl, IDisposable
         InitializeComponent();
         Browser.CoreWebView2InitializationCompleted += OnCoreWebView2InitializationCompleted;
 
-        foreach (var service in StreamingServiceCatalog.Load())
+        foreach (var service in ControlDeckConfig.LoadStreamingServices())
         {
             var button = new Button
             {

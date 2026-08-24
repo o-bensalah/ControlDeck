@@ -26,10 +26,18 @@ public partial class SwipeContainer : UserControl
     private bool _mouseDragging;
     private Point _mouseDownPosition;
 
+    private DependencyObject? _touchDownSource;
+    private bool _manipulationDragging;
+
     public SwipeContainer()
     {
         InitializeComponent();
         SizeChanged += (_, _) => LayoutPages();
+        // Not set via the XAML PreviewTouchDown attribute — that's already taken by
+        // OnTouchMoveForEdgeReveal, and WPF allows multiple handlers on the same routed event via
+        // AddHandler, so this stays a separate, single-purpose handler instead of overloading that
+        // one with unrelated tap-tracking logic.
+        AddHandler(PreviewTouchDownEvent, new EventHandler<TouchEventArgs>(OnTouchDownForTap), true);
     }
 
     public void AddPage(FrameworkElement page)
@@ -187,21 +195,80 @@ public partial class SwipeContainer : UserControl
         GoToPage(_currentIndex + delta);
     }
 
+    // IsManipulationEnabled on this container captures every touch that lands anywhere inside it
+    // (including on a child Button) for the manipulation processor — unlike mouse, a touch never
+    // gets to promote into a normal click on the element underneath. Sliders own their drag
+    // gesture entirely (same reasoning as StartsOnSlider below for mouse), so declining the
+    // manipulation there lets the touch fall through to the Thumb's own native drag handling
+    // instead of being swallowed for a page swipe.
+    //
+    // Checked against _touchDownSource (captured in OnTouchDownForTap from the real TouchDown
+    // event), not e.OriginalSource here — ManipulationStartingEventArgs.OriginalSource reflects
+    // the manipulation container itself, not the element actually touched, so checking it directly
+    // silently never matched the Slider/Thumb and this exclusion never fired.
     private void OnManipulationStarting(object sender, ManipulationStartingEventArgs e)
     {
+        if (StartsOnSlider(_touchDownSource))
+        {
+            e.Cancel();
+            return;
+        }
+
         e.ManipulationContainer = this;
         StopAnimationAndFreeze();
         _dragStartOffset = PageTransform.X;
+        _manipulationDragging = false;
     }
 
+    // Real fingers are never perfectly still — a plain tap still reports a few pixels of jitter
+    // through DeltaManipulation. Applying every tick directly (the old approach) made the page
+    // visibly wobble on every tap, even though it always snapped back once the gesture completed
+    // and turned out not to be a real swipe. Gated behind CumulativeManipulation crossing
+    // DragThreshold instead, same as the mouse path below — nothing moves until a drag is
+    // confirmed, then it jumps straight to the correct position from the total delta rather than
+    // incrementally re-applying jitter.
     private void OnManipulationDelta(object sender, ManipulationDeltaEventArgs e)
     {
         if (_pages.Count == 0) return;
-        PageTransform.X = ClampDragX(PageTransform.X + e.DeltaManipulation.Translation.X);
+
+        if (!_manipulationDragging)
+        {
+            if (Math.Abs(e.CumulativeManipulation.Translation.X) < DragThreshold) return;
+            _manipulationDragging = true;
+        }
+
+        PageTransform.X = ClampDragX(_dragStartOffset + e.CumulativeManipulation.Translation.X);
     }
 
     private void OnManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
-        => FinishDrag(_dragStartOffset, e.FinalVelocities.LinearVelocity.X);
+    {
+        // TotalManipulation is the cumulative movement across the whole gesture — under
+        // DragThreshold means this was a tap, not a swipe, so replay it as a click on whatever was
+        // actually touched (captured in OnTouchDownForTap) since the manipulation capture ate the
+        // touch before it could promote into one on its own.
+        bool wasTap = Math.Abs(e.TotalManipulation.Translation.X) < DragThreshold
+            && Math.Abs(e.TotalManipulation.Translation.Y) < DragThreshold;
+
+        FinishDrag(_dragStartOffset, e.FinalVelocities.LinearVelocity.X);
+        _manipulationDragging = false;
+
+        if (wasTap) SimulateTapClick(_touchDownSource);
+    }
+
+    private void OnTouchDownForTap(object? sender, TouchEventArgs e)
+        => _touchDownSource = e.OriginalSource as DependencyObject;
+
+    private static void SimulateTapClick(DependencyObject? source)
+    {
+        for (var node = source; node is not null; node = VisualTreeHelper.GetParent(node))
+        {
+            if (node is ButtonBase { IsEnabled: true } button)
+            {
+                button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+                return;
+            }
+        }
+    }
 
     // Manipulation events only fire for touch/stylus input, not mouse — this parallel path
     // makes swiping testable (and usable) with a mouse, without breaking clicks on buttons/

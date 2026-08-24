@@ -1,0 +1,23 @@
+{
+  "AppLaunchers": [
+    { "Name": "PrtScn", "Type": "printscreen", "Icon": "📷" },
+    { "Name": "Lock", "Type": "lock", "Icon": "🔒" },
+    { "Name": "Show Desktop", "Type": "showdesktop", "Icon": "🖥" },
+    { "Name": "Sleep", "Type": "sleep", "Icon": "🌙" },
+    { "Name": "Task Manager", "Type": "command", "Command": "taskmgr.exe", "Icon": "📊" },
+    { "Name": "File Explorer", "Type": "command", "Command": "explorer.exe", "Icon": "📁" },
+    { "Name": "Notepad", "Type": "command", "Command": "notepad.exe", "Icon": "📝" },
+    { "Name": "Calculator", "Type": "command", "Command": "calc.exe", "Icon": "🧮" },
+    { "Name": "Paint", "Type": "command", "Command": "mspaint.exe", "Icon": "🎨" },
+    { "Name": "Command Prompt", "Type": "command", "Command": "cmd.exe", "Icon": "⌨" },
+    { "Name": "Settings", "Type": "command", "Command": "ms-settings:", "Icon": "⚙" }
+  ],
+  "StreamingServices": [
+    { "Name": "Netflix", "Url": "https://www.netflix.com/" },
+    { "Name": "Prime Video", "Url": "https://www.primevideo.com/" },
+    { "Name": "Disney+", "Url": "https://www.disneyplus.com/" },
+    { "Name": "Crave", "Url": "https://www.crave.ca/" },
+    { "Name": "YouTube", "Url": "https://www.youtube.com/" },
+    { "Name": "Apple TV+", "Url": "https://tv.apple.com/" }
+  ]
+}

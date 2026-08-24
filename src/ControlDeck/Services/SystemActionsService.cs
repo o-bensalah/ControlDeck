@@ -1,5 +1,10 @@
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace ControlDeck.Services;
 
@@ -7,11 +12,65 @@ internal static class SystemActionsService
 {
     public static void Lock() => LockWorkStation();
 
-    // Plain PrtScn only copies to the clipboard on stock Windows and saves no file — Win+PrtScn
-    // is the combo Windows itself uses to auto-save a PNG to Pictures\Screenshots.
-    public static void PrintScreen() => SendKeyCombo(VkLWin, VkSnapshot);
+    // Simulating the real Win+PrtScn keystroke (the old approach here) turned out to depend on
+    // Windows Settings' "Use the Print Screen key to open screen capture" toggle and/or the shell
+    // build's specific handling of it — on at least one real machine it produced no file at all,
+    // silently, regardless of the extended-key fix. Capturing and saving the screenshot directly
+    // sidesteps all of that: it works the same regardless of what's configured in Windows.
+    public static bool TryPrintScreen(out string? error)
+    {
+        try
+        {
+            var bounds = SystemInformation.VirtualScreen;
+            using var bitmap = new Bitmap(bounds.Width, bounds.Height);
+            using (var g = Graphics.FromImage(bitmap))
+            {
+                g.CopyFromScreen(bounds.Left, bounds.Top, 0, 0, bounds.Size);
+            }
 
-    public static void ShowDesktop() => SendKeyCombo(VkLWin, VkD);
+            string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Screenshots");
+            Directory.CreateDirectory(folder);
+            string path = Path.Combine(folder, $"Screenshot {DateTime.Now:yyyy-MM-dd HHmmss}.png");
+            bitmap.Save(path, ImageFormat.Png);
+
+            error = null;
+            return true;
+        }
+        catch (Exception ex) when (ex is ExternalException or IOException or UnauthorizedAccessException)
+        {
+            error = ex.Message;
+            return false;
+        }
+    }
+
+    // Simulating Win+D (the old approach here) hit the same class of problem as the old PrtScn
+    // simulation — a synthesized global-hotkey combo that Explorer isn't reliably recognizing, made
+    // worse by a triple-monitor setup. Shell.Application's ToggleDesktop is the same COM call the
+    // taskbar's own "Show Desktop" corner button makes, so it doesn't depend on hotkey simulation
+    // being recognized at all.
+    public static bool TryShowDesktop(out string? error)
+    {
+        object? shell = null;
+        try
+        {
+            var shellType = Type.GetTypeFromProgID("Shell.Application")
+                ?? throw new COMException("Shell.Application COM type not found");
+            shell = Activator.CreateInstance(shellType);
+            shellType.InvokeMember("ToggleDesktop", BindingFlags.InvokeMethod, null, shell, null);
+
+            error = null;
+            return true;
+        }
+        catch (Exception ex) when (ex is COMException or TargetInvocationException)
+        {
+            error = ex.Message;
+            return false;
+        }
+        finally
+        {
+            if (shell is not null) Marshal.ReleaseComObject(shell);
+        }
+    }
 
     public static void Sleep() => SetSuspendState(false, false, false);
 
@@ -19,59 +78,9 @@ internal static class SystemActionsService
 
     public static void OpenFileExplorer() => Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
 
-    private static void SendKeyCombo(ushort vk1, ushort vk2)
-    {
-        var inputs = new[] { KeyDown(vk1), KeyDown(vk2), KeyUp(vk2), KeyUp(vk1) };
-        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<Input>());
-    }
-
-    private static Input KeyDown(ushort vk) => new()
-    {
-        Type = InputKeyboard,
-        Union = new InputUnion { Keyboard = new KeyboardInput { VirtualKey = vk } }
-    };
-
-    private static Input KeyUp(ushort vk) => new()
-    {
-        Type = InputKeyboard,
-        Union = new InputUnion { Keyboard = new KeyboardInput { VirtualKey = vk, Flags = KeyEventFKeyUp } }
-    };
-
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool LockWorkStation();
 
     [DllImport("PowrProf.dll", SetLastError = true)]
     private static extern bool SetSuspendState(bool hibernate, bool forceCritical, bool disableWakeEvent);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern uint SendInput(uint numberOfInputs, Input[] inputs, int structSize);
-
-    private const uint InputKeyboard = 1;
-    private const uint KeyEventFKeyUp = 0x0002;
-    private const ushort VkSnapshot = 0x2C;
-    private const ushort VkLWin = 0x5B;
-    private const ushort VkD = 0x44;
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Input
-    {
-        public uint Type;
-        public InputUnion Union;
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    private struct InputUnion
-    {
-        [FieldOffset(0)] public KeyboardInput Keyboard;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct KeyboardInput
-    {
-        public ushort VirtualKey;
-        public ushort ScanCode;
-        public uint Flags;
-        public uint Time;
-        public IntPtr ExtraInfo;
-    }
 }
