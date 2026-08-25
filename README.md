@@ -111,6 +111,7 @@ src/ControlDeck/
     AppLauncherService              Launching shortcuts (commands + system actions)
     AdBlockList                    WebView2 ad/tracker request filtering
     SystemActionsService           Lock/sleep/show desktop/print screen
+    AudioEndpointServiceBase        Shared device-tracking base for AudioService/MicrophoneService
     AudioService / MicrophoneService / AudioOutputService   System volume, mic mute, output switching
     HardwareMonitorService         CPU/GPU/RAM/disk/network sensors
     MediaSessionService            System-wide now-playing/transport control
