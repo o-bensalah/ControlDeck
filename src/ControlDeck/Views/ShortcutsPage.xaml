@@ -63,6 +63,6 @@
             </Border>
         </UniformGrid>
 
-        <controls:MediaWidget Grid.Row="2" Margin="0,16,0,0"/>
+        <controls:MediaWidget x:Name="Media" Grid.Row="2" Margin="0,16,0,0"/>
     </Grid>
 </UserControl>

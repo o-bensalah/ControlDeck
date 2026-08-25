@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -264,7 +266,32 @@ public partial class SwipeContainer : UserControl
         {
             if (node is ButtonBase { IsEnabled: true } button)
             {
-                button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+                // RaiseEvent(ClickEvent) alone only mimics a plain Button. ToggleButton's actual
+                // IsChecked flip happens inside its overridden OnClick(), which a bare routed-event
+                // raise never reaches.
+                //
+                // IToggleProvider.Toggle() fixes that (it calls ToggleButton.OnToggle() directly)
+                // but has the opposite gap: OnToggle() flips IsChecked without raising Click at
+                // all, so a Click handler that applies a real side effect from the new IsChecked
+                // (MuteButton_Click calling into AudioService, MicMuteButton_Click into
+                // MicrophoneService) never runs — IsChecked visibly flips (the X appears) but
+                // nothing is actually muted, and dependent UI like the wave icons never refreshes.
+                // Firing both, Toggle() then the Click event, covers both halves: correct
+                // IsChecked, and the handler that acts on it.
+                var peer = UIElementAutomationPeer.CreatePeerForElement(button);
+                if (peer?.GetPattern(PatternInterface.Toggle) is IToggleProvider toggleProvider)
+                {
+                    toggleProvider.Toggle();
+                    button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+                }
+                else if (peer?.GetPattern(PatternInterface.Invoke) is IInvokeProvider invokeProvider)
+                {
+                    invokeProvider.Invoke();
+                }
+                else
+                {
+                    button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+                }
                 return;
             }
         }

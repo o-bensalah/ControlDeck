@@ -128,5 +128,6 @@ public partial class ShortcutsPage : UserControl, IDisposable
     {
         _metricsTimer?.Stop();
         _hardware?.Dispose();
+        Media.Dispose();
     }
 }
