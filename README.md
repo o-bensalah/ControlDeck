@@ -2,7 +2,15 @@
 
 A custom WPF kiosk app for repurposing a spare touchscreen monitor as a second-display control
 deck for a Windows PC: shortcuts, live system metrics, streaming services, and media/audio
-controls, all swipeable by touch or mouse. 
+controls, all swipeable by touch or mouse.
+
+## Screenshots
+
+### Shortcuts Page
+![Shortcuts page with metrics and media controls](screenshots/ShortcutsPage.png)
+
+### Streaming Page
+![Streaming service picker](screenshots/StreamingPage.png)
 
 ## Features
 
