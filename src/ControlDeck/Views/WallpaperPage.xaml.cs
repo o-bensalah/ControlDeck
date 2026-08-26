@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,10 +21,19 @@ public partial class WallpaperPage : UserControl
         ApplyWallpaper();
 
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("HH:mm:ss");
-        Loaded += (_, _) => _clockTimer.Start();
+        _clockTimer.Tick += (_, _) => UpdateClock();
+        Loaded += (_, _) =>
+        {
+            UpdateClock();
+            _clockTimer.Start();
+        };
         Unloaded += (_, _) => _clockTimer.Stop();
     }
+
+    // "T" (long time pattern) follows the current culture's 12/24-hour convention, which
+    // reflects the Windows time format setting — a hardcoded "HH:mm:ss" would show 24-hour
+    // time even when the taskbar clock is set to 12-hour, making it look hours off.
+    private void UpdateClock() => ClockText.Text = DateTime.Now.ToString("T", CultureInfo.CurrentCulture);
 
     private void ApplyWallpaper()
     {
