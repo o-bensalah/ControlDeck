@@ -18,12 +18,19 @@ internal static class KioskWindowPlacementService
     // process declares Per-Monitor V2 DPI awareness in app.manifest.
     public static void PlaceOnTargetScreen(Window window)
     {
-        var (deviceName, displayNumber) = ControlDeckConfig.LoadDisplay();
-        var target = FindConfiguredScreen(deviceName, displayNumber) ?? FindFallbackScreen();
-        var bounds = target.Bounds;
+        var bounds = GetTargetScreen().Bounds;
 
         var hwnd = new WindowInteropHelper(window).Handle;
         SetWindowPos(hwnd, HwndTopmost, bounds.Left, bounds.Top, bounds.Width, bounds.Height, SwpNoActivate);
+    }
+
+    // Exposed so anything else that needs to land on the same physical monitor as the kiosk
+    // window (e.g. KioskBrowserLauncher positioning the external browser) uses the identical
+    // configured-screen/fallback logic instead of guessing independently.
+    public static Screen GetTargetScreen()
+    {
+        var (deviceName, displayNumber) = ControlDeckConfig.LoadDisplay();
+        return FindConfiguredScreen(deviceName, displayNumber) ?? FindFallbackScreen();
     }
 
     // DeviceName checked first (more precise), then DisplayNumber — null if config.json has
@@ -38,9 +45,12 @@ internal static class KioskWindowPlacementService
             if (match is not null) return match;
         }
 
-        if (displayNumber is int number)
+        // Resolved via the Windows Display Configuration API (the same numbering Settings'
+        // Identify overlay uses), not the monitor's GDI device name — those diverge in practice.
+        if (displayNumber is int number && DisplayConfigService.GetDeviceNameForDisplayNumber(number) is string gdiName)
         {
-            var match = Screen.AllScreens.FirstOrDefault(s => ControlDeckConfig.ParseDisplayNumber(s.DeviceName) == number);
+            var match = Screen.AllScreens.FirstOrDefault(s =>
+                string.Equals(s.DeviceName, gdiName, StringComparison.OrdinalIgnoreCase));
             if (match is not null) return match;
         }
 

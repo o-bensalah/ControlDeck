@@ -70,14 +70,6 @@ internal static class ControlDeckConfig
         return (config.DisplayDeviceName, config.DisplayNumber);
     }
 
-    // Windows' DeviceName (e.g. "\\.\DISPLAY2") ends in a number that, for most drivers, matches
-    // what Display Settings' "Identify" overlay shows for that monitor.
-    public static int? ParseDisplayNumber(string deviceName)
-    {
-        var digits = new string(deviceName.Reverse().TakeWhile(char.IsDigit).Reverse().ToArray());
-        return int.TryParse(digits, out var n) ? n : null;
-    }
-
     private static DefaultsData GetDefaults()
     {
         if (_defaults is not null) return _defaults;

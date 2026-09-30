@@ -1,16 +1,19 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using ControlDeck.Services;
-using Microsoft.Web.WebView2.Core;
 
 namespace ControlDeck.Views;
 
 public partial class StreamingPage : UserControl, IDisposable
 {
+    private KioskExitOverlay? _exitOverlay;
+    private Process? _browserProcess;
+
     public StreamingPage()
     {
         InitializeComponent();
-        Browser.CoreWebView2InitializationCompleted += OnCoreWebView2InitializationCompleted;
 
         foreach (var service in ControlDeckConfig.LoadStreamingServices())
         {
@@ -20,55 +23,73 @@ public partial class StreamingPage : UserControl, IDisposable
                 Style = (Style)FindResource("DeckButtonStyle"),
                 Margin = new Thickness(12),
             };
-            button.Click += (_, _) => OpenService(service.Name, service.Url);
+            button.Click += (_, _) => OpenService(service.Url);
             ServicesGrid.Children.Add(button);
         }
     }
 
-    private void OpenService(string name, string url)
+    private async void OpenService(string url)
     {
-        CurrentServiceText.Text = name;
-        PickerScroll.Visibility = Visibility.Collapsed;
-        BrowserGrid.Visibility = Visibility.Visible;
-        Browser.Source = new Uri(url);
+        if (Window.GetWindow(this) is not { } mainWindow) return;
+
+        CloseActiveBrowser();
+
+        var ownerHwnd = new WindowInteropHelper(mainWindow).Handle;
+        var process = await KioskBrowserLauncher.LaunchAsync(url, ownerHwnd);
+        if (process is null) return;
+
+        _browserProcess = process;
+        ShowExitOverlay(mainWindow, process);
     }
 
-    private void Home_Click(object sender, RoutedEventArgs e)
+    private void ShowExitOverlay(Window mainWindow, Process browserProcess)
     {
-        BrowserGrid.Visibility = Visibility.Collapsed;
-        PickerScroll.Visibility = Visibility.Visible;
-    }
+        var overlay = new KioskExitOverlay { Owner = mainWindow };
+        overlay.Left = mainWindow.Left + mainWindow.ActualWidth - overlay.Width - 24;
+        overlay.Top = mainWindow.Top + 24;
 
-    private void SiteBack_Click(object sender, RoutedEventArgs e)
-    {
-        if (Browser.CanGoBack) Browser.GoBack();
-    }
-
-    private void OnCoreWebView2InitializationCompleted(object? sender, CoreWebView2InitializationCompletedEventArgs e)
-    {
-        if (!e.IsSuccess)
+        EventHandler? onExited = null;
+        onExited = (_, _) => overlay.Dispatcher.BeginInvoke(() =>
         {
-            CurrentServiceText.Text = "WebView2 Runtime not installed";
-            return;
-        }
+            browserProcess.Exited -= onExited;
+            overlay.Close();
+        });
+        browserProcess.EnableRaisingEvents = true;
+        browserProcess.Exited += onExited;
 
-        // Block popups (ad windows, window.open()) outright — there's no window chrome to put
-        // them in anyway, and streaming sites are notorious for spawning ad popups.
-        Browser.CoreWebView2.NewWindowRequested += (_, args) => args.Handled = true;
+        overlay.ExitRequested += (_, _) =>
+        {
+            browserProcess.Exited -= onExited;
+            TryKill(browserProcess);
+            overlay.Close();
+        };
 
-        // Domain-based ad/tracker blocking, done natively via WebView2's request filtering
-        // rather than a browser extension — stays fully embedded, no separate process to fight
-        // with for window focus like the Firefox route did.
-        Browser.CoreWebView2.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
-        Browser.CoreWebView2.WebResourceRequested += OnWebResourceRequested;
+        _exitOverlay = overlay;
+        overlay.Show();
     }
 
-    private void OnWebResourceRequested(object? sender, CoreWebView2WebResourceRequestedEventArgs e)
+    private void CloseActiveBrowser()
     {
-        if (!Uri.TryCreate(e.Request.Uri, UriKind.Absolute, out var uri) || !AdBlockList.IsBlocked(uri.Host)) return;
+        _exitOverlay?.Close();
+        _exitOverlay = null;
 
-        e.Response = Browser.CoreWebView2.Environment.CreateWebResourceResponse(null, 403, "Blocked", "");
+        if (_browserProcess is not null)
+        {
+            TryKill(_browserProcess);
+            _browserProcess = null;
+        }
     }
 
-    public void Dispose() => Browser.Dispose();
+    private static void TryKill(Process process)
+    {
+        try
+        {
+            if (!process.HasExited) process.Kill();
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    public void Dispose() => CloseActiveBrowser();
 }

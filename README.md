@@ -18,8 +18,9 @@ controls, all swipeable by touch or mouse.
   system action: lock, sleep, show desktop, print screen). Auto-paginates as entries are added.
   The first page also shows a live hardware metrics row (CPU/GPU load & temp, RAM, disk, network,
   uptime).
-- **Streaming page**: a JSON-configurable picker grid of streaming services that opens into an
-  embedded browser (WebView2) with native ad-block and popup-block filtering.
+- **Streaming page**: a JSON-configurable picker grid of streaming services that launches the
+  system's default browser in kiosk mode (own isolated profile, positioned on the kiosk display),
+  with a floating overlay button to close it and return to the deck.
 - **Wallpaper page**: a clock over a gradient background, or a custom image if you drop one in.
 - **Shared media/control widget**, embedded at the bottom of every shortcuts page:
   - Now-playing title/artist/art, pulled from whatever's playing system-wide
@@ -75,9 +76,14 @@ to change what ships out of the box.
 
 ### Choosing the kiosk display
 
-Set `DisplayNumber` in `config.json` to the number of the monitor you want ControlDeck to run on.
-Find it in Windows' Display Settings (click "Identify" to see each monitor's number), or use the
-exact `DeviceName` (e.g. `\\.\DISPLAY2`) instead, which is checked first if both are set:
+Set `DisplayNumber` in `config.json` to the number of the monitor you want ControlDeck to run on —
+the same number Windows' Display Settings shows when you click "Identify". This is resolved via the
+Windows Display Configuration API (`QueryDisplayConfig`, see `DisplayConfigService`), the same
+numbering Settings itself uses — not a monitor's GDI device name (`\\.\DISPLAY2`), which is assigned
+independently and can disagree with Identify's number for the same physical monitor.
+
+If you already know a monitor's exact `DeviceName`, `DisplayDeviceName` is checked first and takes
+priority over `DisplayNumber` if both are set:
 
 ```json
 {
@@ -104,18 +110,20 @@ src/ControlDeck/
     MediaWidget              Shared now-playing/transport/volume/mic/output-device controls
   Views/
     ShortcutsPage            App launcher grid + metrics row
-    StreamingPage            Streaming service picker + embedded WebView2 browser
+    StreamingPage            Streaming service picker; launches the kiosk browser
+    KioskExitOverlay         Floating "back to deck" button shown while the kiosk browser is open
     WallpaperPage            Clock + background
   Services/
     ControlDeckConfig               config.json: shortcuts, streaming services, display selection
     AppLauncherService              Launching shortcuts (commands + system actions)
-    AdBlockList                    WebView2 ad/tracker request filtering
+    KioskBrowserLauncher            Launches the default browser in kiosk mode for streaming services
     SystemActionsService           Lock/sleep/show desktop/print screen
     AudioEndpointServiceBase        Shared device-tracking base for AudioService/MicrophoneService
     AudioService / MicrophoneService / AudioOutputService   System volume, mic mute, output switching
     HardwareMonitorService         CPU/GPU/RAM/disk/network sensors
     MediaSessionService            System-wide now-playing/transport control
     KioskWindowPlacementService    Positions the window on the target monitor, using ControlDeckConfig
+    DisplayConfigService            Resolves a DisplayNumber to a monitor via the Windows CCD API (matches Settings' Identify numbering)
 ```
 
 ## Auto-start at logon
