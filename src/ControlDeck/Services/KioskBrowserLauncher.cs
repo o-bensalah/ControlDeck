@@ -24,9 +24,23 @@ internal static class KioskBrowserLauncher
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
 
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT
+    {
+        public int Left, Top, Right, Bottom;
+    }
+
     private const int GwlpHwndParent = -8;
     private static readonly IntPtr HwndTopmost = new(-1);
     private const uint SwpNoActivate = 0x0010;
+    private const int SwHide = 0;
+    private const int SwShowNoActivate = 4;
 
     private static readonly HashSet<string> ChromiumProcessNames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -91,15 +105,7 @@ internal static class KioskBrowserLauncher
         var hwnd = process.MainWindowHandle;
         if (hwnd != IntPtr.Zero)
         {
-            // Kiosk/fullscreen transition happens asynchronously right after the window is
-            // created, and can override a single post-launch SetWindowPos if it lands mid-
-            // transition. Reasserting repeatedly for a few seconds reliably wins that race
-            // instead of guessing the one right instant to catch it.
-            for (int i = 0; i < 8; i++)
-            {
-                OwnAndPosition(hwnd, ownerHwnd, bounds);
-                await Task.Delay(300);
-            }
+            await HideRepositionAndRevealAsync(hwnd, ownerHwnd, bounds);
         }
 
         return process;
@@ -208,6 +214,41 @@ internal static class KioskBrowserLauncher
             return false;
         }
     }
+
+    // The kiosk/fullscreen transition keeps adjusting the window for a little while after it first
+    // gets a handle, and can show it again on its own mid-transition — confirmed live, caught once
+    // as a ~600x130 placeholder window nowhere near its final bounds. A single early hide+position
+    // can get undone by that; reasserting both every poll suppresses any such self-show again
+    // within one interval. But how long that settling actually takes varies (measured anywhere
+    // from ~150ms to several seconds depending on system state), so a fixed iteration count is
+    // either wasted time in the common fast case or not enough margin in a slow one. Polling the
+    // real rect and revealing as soon as it's actually matched the target and held for a few
+    // consecutive checks adapts to whichever happens, with a timeout as a last-resort cap rather
+    // than a guess.
+    private static async Task HideRepositionAndRevealAsync(IntPtr hwnd, IntPtr ownerHwnd, System.Drawing.Rectangle bounds)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(6);
+        int stableCount = 0;
+
+        while (DateTime.UtcNow < deadline && stableCount < 3)
+        {
+            ShowWindow(hwnd, SwHide);
+            OwnAndPosition(hwnd, ownerHwnd, bounds);
+            await Task.Delay(100);
+
+            stableCount = GetWindowRect(hwnd, out var rect) && RectMatches(rect, bounds) ? stableCount + 1 : 0;
+        }
+
+        ShowWindow(hwnd, SwShowNoActivate);
+    }
+
+    // A couple of pixels of slack: DPI rounding between our physical-pixel bounds and whatever the
+    // browser reports for its own rect isn't always exact to the pixel.
+    private static bool RectMatches(RECT rect, System.Drawing.Rectangle bounds) =>
+        Math.Abs(rect.Left - bounds.Left) <= 2 &&
+        Math.Abs(rect.Top - bounds.Top) <= 2 &&
+        Math.Abs((rect.Right - rect.Left) - bounds.Width) <= 2 &&
+        Math.Abs((rect.Bottom - rect.Top) - bounds.Height) <= 2;
 
     // Making the browser window "owned" by MainWindow keeps it above MainWindow in z-order even
     // though MainWindow is forced topmost — an owned window is always kept above its owner
